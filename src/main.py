@@ -29,7 +29,12 @@ TAQUINS = {
 	"base_3_simple" : [1, 2, 3,
 						4, 0, 5,
 						7, 8, 6],
-	#28 moves, 3598 turns, 5710 nodes, ~8.3sec
+	# https://dgurkaynak.github.io/8-puzzle-solver/
+	# Moves 18, nodes 291 5sec sur le site, nous instant
+	"base_3_known" : [2, 3, 0,
+						8, 1, 4,
+						7, 6, 5],
+	#28 moves, 2446 turns, 3767 nodes, ~4.2sec
 	"base_3_fast" : [4, 8, 7,
 					2, 0, 6,
 					3, 5, 1],
@@ -73,6 +78,14 @@ def heuristic_manhattan(goal, current):
 		tt += abs(tx - gx) + abs(ty - gy)
 	return tt
 
+def heuristic_badplace(goal, current):
+	tt = 0
+	for i, v in enumerate(current.board):
+		if v == 0:
+			continue
+		if v != i + 1:
+			tt += 1
+	return tt
 
 """
 	Represente un taquin
@@ -196,12 +209,6 @@ def find_moves(state, goal):
 	if state.x > 0 and state.action != ACTIONS["E"]:
 		yield state.transition(ACTIONS["W"], goal)
 
-def find_in_lst(lst, item):
-	for i, v in enumerate(lst):
-		if item == v:
-			return i, v
-	return None, None
-
 def astar(start, goal):
 	open_lst = PriorityList()
 	close_lst = []
@@ -220,14 +227,7 @@ def astar(start, goal):
 			break
 
 		for next_state in find_moves(curr_state, goal):
-			try:
-				old_i = close_lst.index(next_state)
-			except:
-				old_i = None
-			if old_i is not None \
-			and next_state < close_lst[old_i]:
-				close_lst.pop(old_i)
-				open_lst.append(next_state)
+			if next_state in close_lst:
 				continue
 
 			try:
@@ -235,7 +235,7 @@ def astar(start, goal):
 			except:
 				old_i = None
 			if old_i is not None \
-			and next_state < open_lst[old_i]:
+			and open_lst[old_i] > next_state:
 				open_lst.pop(old_i)
 				open_lst.append(next_state)
 				continue
