@@ -2,21 +2,25 @@
 #-*- coding: utf-8 -*-
 #
 
-import sys, os, gc
+import sys, os
 import copy
 import math
+import heapq
 from collections import deque
 
 
-GOAL = "goal_9"
-BASE = "base_9"
+GOAL = "goal_4_esca"
+BASE = "base_4_arobion"
 
 #GOAL = "goal_3_top"
 #BASE = "base_31"
 
-
+"""
+52 moves, 12sec chez lui
+66 moves en 1.1 sec ou 64 moves en 1.9sec chez nous selon le map
+"""
 TAQUINS = {
-	
+
 	"goal_4" : [1, 2, 3, 4,
 				5, 6, 7, 8,
 				9, 10, 11, 12,
@@ -30,7 +34,14 @@ TAQUINS = {
 	"base_31" : [8, 7, 6, 0, 4, 1, 2, 5, 3],
 	"base_31_2" : [8, 0, 6,  5, 4, 7, 2, 3, 1],
 	"base_4" : [15, 6, 10, 3, 7, 8, 13, 5, 11, 9, 12, 0, 1, 2, 4, 14],
-	"base_4_easy": [1, 2, 3, 4, 13, 9, 14, 5, 12, 10, 15, 0, 11, 8, 7, 6],
+
+	"goal_3_esca": [1, 2, 3, 8, 0, 4, 7, 6, 5],
+	"goal_4_esca": [1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7],
+
+	"base_4_easy": [1, 4, 5, 0, 12, 2, 15, 3, 14, 11, 7, 6, 10, 13, 9, 8],
+
+	"base_4_arobion": [5, 4, 9, 15, 6, 2, 8, 11, 1, 12, 7, 0, 3, 13, 14, 10],
+
 	"base_3_simple" : [1, 2, 3,
 						4, 0, 5,
 						7, 8, 6],
@@ -64,46 +75,48 @@ ACTIONS = {
 	"None": 4, "N" : 0, "S" : 1, "E" : 2, "W" : 3
 }
 
+class PriorityQueue(list):
+    def __init__(self, *args):
+        list.__init__(self, *args)
 
-"""
-	Inverse
-"""
-class PriorityList(deque):
-	def __init__(self, *args):
-		deque.__init__(self, *args)
+    def push(self, item):
+        heapq.heappush(self, item)
 
-	def append(self, new_item):
-		insert_index = len(self)
-		for index, item in enumerate(self):
-			if (new_item <= item):
-				insert_index = index
-				break
-		self.insert(insert_index, new_item)
+    def pop(self):
+        return heapq.heappop(self)
 
 
-MAP_HEUR = [0, 1, 4, 6, 10, 15, 20, 25, 32, 39, 46, 58, 70, 82, 98, 115, 130]
+#heur 3x3: [0, 1, 4, 6, 10]
+#MAP_HEUR = [0, 1, 3, 7, 10, 14, 18, 25, 32, 39, 46, 58, 70, 82, 98, 115, 130]
+MAP_HEUR = [0, 1, 4, 6, 9, 11, 12]
+#MAP_HEUR = [0, 1, 2, 3, 4, 5, 6]
+
 # Take a goal and current taquin
-def init_heuristic_manhattan(goal, current):
-	tt = 0
-	size = goal.size
-	for i, v in enumerate(current.taquin.board):
-		if v == 0:
-			continue
-		i_goal = goal.board.index(v)
-		gx, gy = i_goal % size, i_goal // size
-		tx, ty = i % size, i // size
-		tmp = abs(tx - gx) + abs(ty - gy)
-		current.list_heuristic[i] = tmp
-		tt += tmp
-	return tt
+def init_heuristic_manhattan(manhattan_cost, puzzle):
+	total = 0
+	# Range de 1 (on compte pas le 0) a len
+	for index in range(1, len(puzzle.board)):
+		total += manhattan_cost[index][puzzle.board.index(index)]
+	return total
 
+#Environ 5-8% de vitesse en plus, pas terrible, cache de goal inutile (1% maxi)
+POS_GOAL4 =  [
+	(0, 0), (0, 1), (0, 2), (0, 3),
+	(1, 0), (1, 1), (1, 2), (1, 3),
+	(2, 0), (2, 1), (2, 2), (2, 3),
+	(3, 0), (3, 1), (3, 2), (3, 3)
+]
+POS_GOAL3 =  [
+	(0, 0), (0, 1), (0, 2),
+	(1, 0), (1, 1), (1, 2),
+	(2, 0), (2, 1), (2, 2)
+]
 def up_heuristic_manhattan(goal, current, parent):
 	size = goal.size
 	i_goal = goal.board.index(parent.taquin.board[current.taquin.pos])
 	gx, gy = i_goal % size, i_goal // size
-	tmp = abs(parent.x - gx) + abs(parent.y - gy)
-	#if current.cost > 31:
-	#	tmp += current.cost - 31
+	tmp = abs(parent.x -gx) \
+		+ abs(parent.y - gy)
 	if tmp != current.list_heuristic[current.taquin.pos]:
 		current.list_heuristic[parent.taquin.pos] = tmp
 		diff = tmp - current.list_heuristic[current.taquin.pos]
@@ -178,39 +191,46 @@ class Taquin:
 	Etat en cours
 """
 class State:
+	pre_man = []
+
 	def __init__(self, goal, taquin, action, parent, cost):
-		self.action = action	# Action performs from last state			
+		self.action = action	# Action performs from last state
 		self.parent = parent	# Ref to previous state
 		self.cost = cost		# +1 each step
 		self.taquin = copy.deepcopy(taquin)	# Current taquin
 		if parent is not None:
 			self.taquin.move(action)
-			self.list_heuristic = [*parent.list_heuristic]
-			self.heuristic = up_heuristic_manhattan(goal, self, parent)
+			#self.list_heuristic = [*parent.list_heuristic]
+			#self.heuristic = up_heuristic_manhattan(goal, self, parent)
+			self.heuristic = init_heuristic_manhattan(State.pre_man, self.taquin)
 		else:
-			self.list_heuristic = [0] * len(self.taquin.board)
-			self.heuristic = init_heuristic_manhattan(goal, self)
+			#self.list_heuristic = [0] * len(self.taquin.board)
+			State.pre_man = [
+			[abs(pos % goal.size
+				- goal.board.index(tuile) % goal.size)
+			+ abs(pos // goal.size
+				- goal.board.index(tuile) // goal.size)
+				for pos in range(len(goal.board))
+			]
+			for tuile in range(len(goal.board))
+			]
+			self.heuristic = init_heuristic_manhattan(State.pre_man, self.taquin)
 		self.weight = self.cost + self.heuristic
 
 
 	def transition(self, action, goal):
-		new_state = State(
+		return State(
 			goal, self.taquin, action, self, self.cost + 1)
-		return new_state
 
+	# Pour le dict: hash = chaine du board en int
+	def __hash__(self):
+		return int("".join(map(str, self.taquin.board)))
+	# Pour le tri et la comparaison
 	def __lt__(self, other):
 		return self.weight < other.weight
-	def __gt__(self, other):
-		return self.weight > other.weight
-	def __le__(self, other):
-		return self.weight <= other.weight
-	def __ge__(self, other):
-		return self.weight >= other.weight
-
+	# Pour le X in set
 	def __eq__(self, other):
-		return self.taquin == other.taquin
-	def __ne__(self, other):
-		return self.taquin != other.taquin
+		return self.taquin.board == other.taquin.board
 
 	@property
 	def size(self):
@@ -240,48 +260,51 @@ def find_moves(state, goal):
 		yield state.transition(ACTIONS["W"], goal)
 
 def astar(start, goal):
-	open_lst = PriorityList()
-	close_lst = []
+	open_lst = PriorityQueue()
+	open_set = {}
+	close_set = {}
 	init_state = State(goal, start, ACTIONS["None"], None, 0)
-	open_lst.append(init_state)
+	open_lst.push(init_state)
+	open_set[init_state] = init_state
 
 	count_turn, count_node = 0, 0
 	found = False
 	found_state = None
-	last_size = sys.getsizeof(open_lst)
 	count_last = 0
 	while (len(open_lst) > 0):
-		curr_state = open_lst.popleft()
-		close_lst.append(curr_state)
+		curr_state = open_lst.pop()
+		del open_set[curr_state]
+		close_set[curr_state] = curr_state
 
 		found_state = curr_state
-		if curr_state.taquin == goal:
+		if curr_state.taquin.board == goal.board:
 			found = True
 			break
 
 		for next_state in find_moves(curr_state, goal):
-			if next_state in close_lst:
+			# if curr_state.weight <= next_state.weight:
+			# 	print("{}".format(curr_state.weight - next_state.weight))
+			if next_state in close_set:
 				continue
-
-			try:
-				old_i = open_lst.index(next_state)
-			except:
-				old_i = None
-			if old_i is not None \
-			and open_lst[old_i] > next_state:
-				del open_lst[old_i]
-				open_lst.append(next_state)
-				continue
-
-			open_lst.append(next_state)
-			if sys.getsizeof(open_lst) != last_size:
-				count_last += 1
-				#print(last_size)
-				last_size = sys.getsizeof(open_lst)
-			count_node += 1
+			elif next_state in open_set:
+				old = open_set[next_state]
+				#print("{}, {}".format(next_state.weight, old.weight))
+				if next_state < old:
+					old.cost = next_state.cost
+					old.heuristic = next_state.heuristic
+					old.parent = next_state.parent
+					old.weight = next_state.weight
+					old.action = next_state.action
+					# open_lst.remove(next_state)
+					# open_lst.push(next_state)
+					# open_set[next_state] = next_state
+			else:
+				open_lst.push(next_state)
+				open_set[next_state] = next_state
+				count_node += 1
 
 		count_turn += 1
-		if count_turn % 1000 == 0:
+		if count_turn % 10000 == 0:
 			print("{} turns".format(count_turn))
 
 	print("Size: {}".format(count_last))
@@ -311,9 +334,9 @@ def main():
 	taquin_base = Taquin(TAQUINS[BASE], int(math.sqrt(len(TAQUINS[BASE]))))
 	taquin_goal = Taquin(TAQUINS[GOAL], int(math.sqrt(len(TAQUINS[GOAL]))))
 
-	if not solvable(taquin_base):
-		print("Not solvable")
-		# return 0
+	# if not solvable(taquin_base):
+	# 	print("Not solvable")
+	# 	return 0
 
 	astar(taquin_base, taquin_goal)
 	return 0
