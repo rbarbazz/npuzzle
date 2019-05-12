@@ -6,6 +6,7 @@ import sys
 import resource
 import math
 import heapq
+import operator
 from consts import *
 from npuzzle_gen import make_puzzle, make_goal
 
@@ -75,8 +76,9 @@ class NPuzzle:
 
 """
 Ultra fast manhattan heurstic, precomputed
+Admissible and monotonic -> always give best path
 """
-def heuristic_manhattan(cost_manh, npuzzle):
+def heuristic_manhattan(cost_lc, cost_manh, npuzzle):
 	tmp_board = npuzzle.board
 	return sum([
 		cost_manh[i][tmp_board[i]]
@@ -84,12 +86,90 @@ def heuristic_manhattan(cost_manh, npuzzle):
 	])
 
 
+def heuristic_lc(cost_lc, cost_manh, npuzzle):
+	board = npuzzle.board
+	size = npuzzle.size
+	lc = 0
+	# Iterate rows
+	# foreach Ri in S
+	for row in range(0, size):
+		# Conflit dans la ligne
+		lc_row = {}
+		lc_row_conflict = {}
+
+		# foreach Tj in Ri
+		for tj in range(row * size, (row + 1) * size):
+			if board[tj] == 0 or cost_lc[board[tj]][1] != row:
+				continue
+			# C(Tj, Ri)
+			c_row = 0
+			lc_row_conflict[tj] = []
+			for c in range(row * size, tj):
+				if board[c] == 0:
+					continue
+				# Si on a un conflit de X vers X-1
+				if  cost_lc[board[tj]][1] == cost_lc[board[c]][1] \
+				and cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
+					lc_row_conflict[tj].append(c)
+					c_row += 1
+			lc_row[tj] = c_row
+
+		# While there is a non zero value in C
+		if len(lc_row):
+			tk = max(lc_row, key=lc_row.get)
+			while lc_row[tk] > 0:
+				# Remove tk
+				lc_row[tk] = 0
+				# Pour chaque tile tj en conflit with tk, faire -1
+				for tj in lc_row_conflict[tk]:
+					lc_row[tj] -= 1
+				lc += 1
+				tk = max(lc_row, key=lc_row.get)
+
+	# foreach Ci in S
+	for col in range(0, size):
+		# Conflit dans la ligne
+		lc_col = {}
+		lc_col_conflict = {}
+
+		# foreach Tj in Ri
+		for tj in range(col, len(board), size):
+			if board[tj] == 0 or cost_lc[board[tj]][0] != col:
+				continue
+			# C(Tj, Ri)
+			c_col = 0
+			lc_col_conflict[tj] = []
+			for c in range(col, tj, size):
+				if board[c] == 0:
+					continue
+				# Si on a un conflit de X vers X-1
+				if cost_lc[board[tj]][0] == cost_lc[board[c]][0] \
+				and cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
+					lc_col_conflict[tj].append(c)
+					c_col += 1
+			lc_col[tj] = c_col
+
+		# While there is a non zero value in C
+		if len(lc_col):
+			tk = max(lc_col, key=lc_col.get)
+			while lc_col[tk] > 0:
+				# Remove tk
+				lc_col[tk] = 0
+				# Pour chaque tile tj en conflit with tk, faire -1
+				for tj in lc_col_conflict[tk]:
+					lc_col[tj] -= 1
+				lc += 1
+				tk = max(lc_col, key=lc_col.get)
+	# 2 * lc + manh
+	return lc + lc + heuristic_manhattan(cost_lc, cost_manh, npuzzle)
 """
 Node of the Astar
 """
 class State:
 	pre_man = []
+	pre_lc = []
 	board_range = None
+	heuristic_fun = heuristic_manhattan
 
 	def __init__(self, taquin, action, parent, cost):
 		self.action = action	# Action performs from last state
@@ -97,7 +177,8 @@ class State:
 		self.cost = cost		# +1 each step
 		self.taquin = NPuzzle(taquin.board, taquin.size, taquin.pos)# Current taquin
 		self.taquin.move(action)
-		self.heuristic = heuristic_manhattan(State.pre_man, self.taquin)
+		self.heuristic = State.heuristic_fun(
+			State.pre_lc, State.pre_man, self.taquin)
 		# Cache
 		self.weight = self.cost + self.heuristic
 		self.board = self.taquin.board
@@ -125,6 +206,8 @@ class State:
 	# Pour le tri et la comparaison
 	def __lt__(self, other):
 		return self.weight < other.weight
+	def __gt__(self, other):
+		return self.weight > other.weight
 	# Pour le X in set
 	def __eq__(self, other):
 		return self.board == other.board
@@ -136,14 +219,13 @@ def astar(start):
 	init_state = State(start, ACTIONS["NONE"], None, 0)
 	open_lst.push(init_state)
 	open_set[init_state] = init_state
-
 	count_turn, count_node = 0, 0
 	found = False
 	found_state = None
 	while (len(open_lst) > 0):
 		curr_state = open_lst.pop()
 		del open_set[curr_state]
-		close_set[curr_state] = curr_state
+		close_set[curr_state] = 1
 
 		found_state = curr_state
 		if not curr_state.heuristic:
@@ -151,11 +233,13 @@ def astar(start):
 			break
 
 		for next_state in curr_state.find_moves():
+			# if next_state.weight > 52:
+			# 	print(next_state.weight)
 			if next_state in close_set:
 				continue
 			elif next_state in open_set:
 				old = open_set[next_state]
-				if next_state < old:
+				if next_state.weight < old.weight:
 					old.cost = next_state.cost
 					old.heuristic = next_state.heuristic
 					old.parent = next_state.parent
@@ -168,7 +252,7 @@ def astar(start):
 
 		count_turn += 1
 		if count_turn % 10000 == 0:
-			print("{} turns, {} nodes, {} Mo".format(count_turn, count_node,
+			print("{} - {} turns, {} nodes, {} Mo".format(len(open_lst), count_turn, count_node,
 				int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)))
 
 	if found:
@@ -194,15 +278,20 @@ def solvable(taquin):
 
 
 def main():
-	n_goal = make_goal(SIZE)
-	# n_goal = TAQUINS["goal_4_esca"]
+	if SIZE:
+		n_goal = make_goal(SIZE)
+		n_taq = make_puzzle(SIZE, solvable=True, iterations=10000)
+	else:
+		n_goal = TAQUINS[GOAL]
+		n_taq = TAQUINS[BASE]
+	print("Base: {}".format(n_taq))
+	print("Goal: {}".format(n_goal))
+
+	taquin_base = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
 	goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
 
-	n_taq = make_puzzle(SIZE, solvable=True, iterations=10000)
-	# n_taq = TAQUINS["base_4_arobion"]
-	taquin_base = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
-
 	State.board_range = range(0, len(goal.board))
+	State.heuristic_fun = heuristic_lc
 
 	def _manh(fromm, to, board, size):
 		if to == 0:
@@ -210,19 +299,28 @@ def main():
 		r = abs(fromm % size - board.index(to) % size) \
 			+ abs(fromm // size - board.index(to) // size)
 		return r
-	State.pre_man = [[
+	State.pre_man = tuple([tuple([
 			_manh(fromm, to, goal.board, goal.size)
-		for to in range(0, len(goal.board))]
-	for fromm in range(0, len(goal.board))]
+		for to in range(0, len(goal.board))])
+	for fromm in range(0, len(goal.board))])
 
-
-
+	def _lc(pos, board, size):
+		if pos == 0:
+			return [999999] # Should never be picked, so 1 value to crash
+		r = [abs(board.index(pos) % size), abs(board.index(pos) // size)]
+		return r
+	State.pre_lc = tuple([
+			tuple(_lc(pos, goal.board, goal.size))
+		for pos in range(0, len(goal.board))
+	])
+	print(State.pre_lc)
 
 	# if not solvable(taquin_base):
 	# 	print("Not solvable")
 	# 	return 0
 
 	astar(taquin_base)
+
 	return 0
 
 
