@@ -2,79 +2,45 @@
 #-*- coding: utf-8 -*-
 #
 
-import sys, os
-import copy
+import sys
+import resource
 import math
 import heapq
-
-
-GOAL = "goal_4_esca"
-BASE = "base_4_arobion"
-
-#GOAL = "goal_3_top"
-#BASE = "base_31_top"
+from consts import *
+from npuzzle_gen import make_puzzle, make_goal
 
 """
-52 moves, 14sec chez lui (manh et linear conflicts)
-52 moves, 19sec chez nous (manh)
+Possible actions
 """
-TAQUINS = {
-	"goal_3" : [1, 2, 3, 4, 5, 6, 7, 8, 0],
-	"goal_3_esca": [1, 2, 3, 8, 0, 4, 7, 6, 5],
-	"goal_3_top" : [0, 1, 2, 3, 4, 5, 6, 7, 8],
-	"goal_4" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0],
-	"goal_4_esca": [1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7],
-
-	"base_31_top" : [8, 7, 6, 0, 4, 1, 2, 5, 3],
-	"base_31_2_top" : [8, 0, 6,  5, 4, 7, 2, 3, 1],
-
-	"base_4_arobion": [5, 4, 9, 15, 6, 2, 8, 11, 1, 12, 7, 0, 3, 13, 14, 10],
-	"base_4_easy": [1, 4, 5, 0, 12, 2, 15, 3, 14, 11, 7, 6, 10, 13, 9, 8],
-}
-
-
 ACTIONS = {
-	"None": 4, "N" : 0, "S" : 1, "E" : 2, "W" : 3
+	"N": 0, "S": 1, "E": 2, "W": 3, "NONE": 4
 }
 
+"""
+Ultra fast priority queue (binary heap with heapq)
+"""
 class PriorityQueue(list):
-    def __init__(self, *args):
-        list.__init__(self, *args)
+	def __init__(self, *args):
+		list.__init__(self, *args)
+		self.heappush = heapq.heappush
+		self.heappop = heapq.heappop
 
-    def push(self, item):
-        heapq.heappush(self, item)
+	def push(self, item):
+		self.heappush(self, item)
 
-    def pop(self):
-        return heapq.heappop(self)
-
-
-def heuristic_manhattan(manhattan_cost, puzzle):
-	total = 0
-	# Range de 1 (on compte pas le 0) a len
-	for index in range(1, len(puzzle.board)):
-		total += manhattan_cost[index][puzzle.board.index(index)]
-	return total
+	def pop(self):
+		return self.heappop(self)
 
 """
-	Represente un taquin
-	board = list des numeros
+Ultra fast and compact npuzzle
 """
-class Taquin:
-	def __init__(self, values, size):
+class NPuzzle:
+	def __init__(self, values, size, pos):
 		self.board = [*values]
 		self.size = size
-		self.pos, self.x, self.y = 0, 0, 0
-		self._up_pos(values.index(0))
-
-	def _up_pos(self, value):
-		self.pos += value
-		self.x = self.pos % self.size
-		self.y = self.pos // self.size
-
-	def __eq__(self, other):
-		return self.board == other.board
-	def __ne__(self, other):
-		return self.board != other.board
+		self.pos = pos
+		self.x = pos % size
+		self.y = pos // size
 
 	def move(self, action):
 		if action == ACTIONS["N"]:
@@ -85,110 +51,106 @@ class Taquin:
 			modif = 1
 		elif action == ACTIONS["W"]:
 			modif = -1
+		else:
+			modif = 0
 		self.board[self.pos] = self.board[self.pos + modif]
-		self._up_pos(modif)
+		self.pos += modif
+		self.x = self.pos % self.size
+		self.y = self.pos // self.size
 		self.board[self.pos] = 0
 
+	def __eq__(self, other):
+		return self.board == other.board
+	def __ne__(self, other):
+		return self.board != other.board
+
 	def __str__(self):
-		r = ""
+		r = []
 		for i, v in enumerate(self.board):
 			if i != 0 and i % self.size == 0:
 				r += "\n"
 			r += "{}, ".format(v)
-		return r
+		return "".join(r)
 
-goal = Taquin(TAQUINS[GOAL], int(math.sqrt(len(TAQUINS[GOAL]))))
 
 """
-	Etat en cours
+Ultra fast manhattan heurstic, precomputed
+"""
+def heuristic_manhattan(cost_manh, npuzzle):
+	tmp_board = npuzzle.board
+	return sum([
+		cost_manh[i][tmp_board[i]]
+		for i in State.board_range
+	])
+
+
+"""
+Node of the Astar
 """
 class State:
 	pre_man = []
+	board_range = None
 
 	def __init__(self, taquin, action, parent, cost):
 		self.action = action	# Action performs from last state
 		self.parent = parent	# Ref to previous state
 		self.cost = cost		# +1 each step
-		self.taquin = copy.deepcopy(taquin)	# Current taquin
-		if parent is not None:
-			self.taquin.move(action)
-		else:
-			State.pre_man = [
-			[abs(pos % goal.size
-				- goal.board.index(tuile) % goal.size)
-			+ abs(pos // goal.size
-				- goal.board.index(tuile) // goal.size)
-				for pos in range(len(goal.board))
-			]
-			for tuile in range(len(goal.board))
-			]
+		self.taquin = NPuzzle(taquin.board, taquin.size, taquin.pos)# Current taquin
+		self.taquin.move(action)
 		self.heuristic = heuristic_manhattan(State.pre_man, self.taquin)
+		# Cache
 		self.weight = self.cost + self.heuristic
+		self.board = self.taquin.board
+		self._hash = hash(str(self.board))
 
-
-	def transition(self, action):
-		return State(self.taquin, action, self, self.cost + 1)
+	def find_moves(self):
+		action = self.action
+		cost = self.cost + 1
+		taquin = self.taquin
+		moves = []
+		app = moves.append
+		if taquin.y > 0 and action != ACTIONS["S"]:
+			 app(State(taquin, ACTIONS["N"], self, cost))
+		if taquin.y < taquin.size - 1 and action != ACTIONS["N"]:
+			app(State(taquin, ACTIONS["S"], self, cost))
+		if taquin.x < taquin.size - 1 and action != ACTIONS["W"]:
+			app(State(taquin, ACTIONS["E"], self, cost))
+		if taquin.x > 0 and action != ACTIONS["E"]:
+			app(State(taquin, ACTIONS["W"], self, cost))
+		return moves
 
 	# Pour le dict: hash = chaine du board en int
 	def __hash__(self):
-		return int("".join(map(str, self.taquin.board)))
+		return self._hash
 	# Pour le tri et la comparaison
 	def __lt__(self, other):
 		return self.weight < other.weight
 	# Pour le X in set
 	def __eq__(self, other):
-		return self.taquin.board == other.taquin.board
-
-	@property
-	def size(self):
-		return self.taquin.size
-	@property
-	def x(self):
-		return self.taquin.x
-	@property
-	def y(self):
-		return self.taquin.y
-
-	def __str__(self):
-		return str(self.taquin)
-
-def find_moves(state):
-	# N
-	if state.y > 0 and state.action != ACTIONS["S"]:
-		yield state.transition(ACTIONS["N"])
-	# S
-	if state.y < state.size - 1 and state.action != ACTIONS["N"]:
-		yield state.transition(ACTIONS["S"])
-	# E
-	if state.x < state.size - 1 and state.action != ACTIONS["W"]:
-		yield state.transition(ACTIONS["E"])
-	# W
-	if state.x > 0 and state.action != ACTIONS["E"]:
-		yield state.transition(ACTIONS["W"])
+		return self.board == other.board
 
 def astar(start):
 	open_lst = PriorityQueue()
 	open_set = {}
 	close_set = {}
-	init_state = State(start, ACTIONS["None"], None, 0)
+	init_state = State(start, ACTIONS["NONE"], None, 0)
 	open_lst.push(init_state)
 	open_set[init_state] = init_state
 
 	count_turn, count_node = 0, 0
 	found = False
 	found_state = None
-	count_last = 0
 	while (len(open_lst) > 0):
 		curr_state = open_lst.pop()
 		del open_set[curr_state]
 		close_set[curr_state] = curr_state
 
 		found_state = curr_state
-		if curr_state.taquin.board == goal.board:
+		if not curr_state.heuristic:
 			found = True
 			break
 
-		for next_state in find_moves(curr_state):
+		for next_state in curr_state.find_moves():
 			if next_state in close_set:
 				continue
 			elif next_state in open_set:
@@ -206,9 +168,9 @@ def astar(start):
 
 		count_turn += 1
 		if count_turn % 10000 == 0:
-			print("{} turns".format(count_turn))
+			print("{} turns, {} nodes, {} Mo".format(count_turn, count_node,
+				int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)))
 
-	print("Size: {}".format(count_last))
 	if found:
 		print("Success: ")
 	else:
@@ -232,7 +194,29 @@ def solvable(taquin):
 
 
 def main():
-	taquin_base = Taquin(TAQUINS[BASE], int(math.sqrt(len(TAQUINS[BASE]))))
+	n_goal = make_goal(SIZE)
+	# n_goal = TAQUINS["goal_4_esca"]
+	goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
+
+	n_taq = make_puzzle(SIZE, solvable=True, iterations=10000)
+	# n_taq = TAQUINS["base_4_arobion"]
+	taquin_base = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
+
+	State.board_range = range(0, len(goal.board))
+
+	def _manh(fromm, to, board, size):
+		if to == 0:
+			return 0
+		r = abs(fromm % size - board.index(to) % size) \
+			+ abs(fromm // size - board.index(to) // size)
+		return r
+	State.pre_man = [[
+			_manh(fromm, to, goal.board, goal.size)
+		for to in range(0, len(goal.board))]
+	for fromm in range(0, len(goal.board))]
+
+
+
 
 	# if not solvable(taquin_base):
 	# 	print("Not solvable")
