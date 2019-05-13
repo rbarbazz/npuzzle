@@ -9,6 +9,7 @@ import heapq
 import operator
 from consts import *
 from npuzzle_gen import make_puzzle, make_goal
+from collections import OrderedDict
 
 """
 Possible actions
@@ -31,6 +32,9 @@ class PriorityQueue(list):
 
 	def pop(self):
 		return self.heappop(self)
+
+	def rebuild(self):
+		heapq.heapify(self)
 
 """
 Ultra fast and compact npuzzle
@@ -85,6 +89,14 @@ def heuristic_manhattan(cost_lc, cost_manh, npuzzle):
 		for i in State.board_range
 	])
 
+def last_max_dict(pdict):
+	max_k = list(pdict.keys())[0]
+	max_v = pdict[max_k]
+	for k, v in pdict.items():
+		if v > max_v:
+			max_v = v
+			max_k = k
+	return k
 
 def heuristic_lc(cost_lc, cost_manh, npuzzle):
 	board = npuzzle.board
@@ -148,7 +160,6 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 					lc_col_conflict[tj].append(c)
 					c_col += 1
 			lc_col[tj] = c_col
-
 		# While there is a non zero value in C
 		if len(lc_col):
 			tk = max(lc_col, key=lc_col.get)
@@ -162,6 +173,7 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 				tk = max(lc_col, key=lc_col.get)
 	# 2 * lc + manh
 	return lc + lc + heuristic_manhattan(cost_lc, cost_manh, npuzzle)
+
 """
 Node of the Astar
 """
@@ -233,8 +245,6 @@ def astar(start):
 			break
 
 		for next_state in curr_state.find_moves():
-			# if next_state.weight > 52:
-			# 	print(next_state.weight)
 			if next_state in close_set:
 				continue
 			elif next_state in open_set:
@@ -242,9 +252,13 @@ def astar(start):
 				if next_state.weight < old.weight:
 					old.cost = next_state.cost
 					old.heuristic = next_state.heuristic
-					old.parent = next_state.parent
 					old.weight = next_state.weight
+					old.parent = next_state.parent
 					old.action = next_state.action
+					# rebuild = True
+					# open_lst.remove(old)
+					# open_lst.push(next_state)
+					# open_set[next_state] = next_state
 			else:
 				open_lst.push(next_state)
 				open_set[next_state] = next_state
@@ -291,7 +305,8 @@ def main():
 	goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
 
 	State.board_range = range(0, len(goal.board))
-	State.heuristic_fun = heuristic_lc
+	if HEUR == 1:
+		State.heuristic_fun = heuristic_lc
 
 	def _manh(fromm, to, board, size):
 		if to == 0:
@@ -306,14 +321,13 @@ def main():
 
 	def _lc(pos, board, size):
 		if pos == 0:
-			return [999999] # Should never be picked, so 1 value to crash
+			return [99999, 99999] # Should never be picked
 		r = [abs(board.index(pos) % size), abs(board.index(pos) // size)]
 		return r
 	State.pre_lc = tuple([
 			tuple(_lc(pos, goal.board, goal.size))
 		for pos in range(0, len(goal.board))
 	])
-	print(State.pre_lc)
 
 	# if not solvable(taquin_base):
 	# 	print("Not solvable")
@@ -323,6 +337,29 @@ def main():
 
 	return 0
 
+# Goal
+#  1,  2,  3, 4,
+# 12, 13, 14, 5,
+# 11,  0, 15, 6,
+# 10,  9,  8, 7,
+
+# Base
+# 5,  4,  9, 15,
+# 6,  2,  8, 11,
+# 1, 12,  7,  0,
+# 3, 13, 14, 10,
+
+#Manh = 2 + 1 + 5 + 2 + 4 + 4 + 2 + 2 + 4 + 3 + 4 + 2 + 2 + 2 + 3 = 42
+#lc = 2 * (1) = 2
+
+# 1er ou h > min moves (m=33, lc=35)
+#  5,  2,  7,  4,
+#  1,  6,  9, 15,
+# 12, 11,  8, 10,
+#  3, 13, 14,  0,
+
+#Manh = 1 + 0 + 5 + 0 + 4 + 3 + 4 + 1 + 3 + 4 + 1 + 1 + 2 + 2 + 2 = 33
+# lc = 2 * (1) = 2
 
 if __name__ == '__main__':
 	sys.exit(main())
