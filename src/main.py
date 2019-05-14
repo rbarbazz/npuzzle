@@ -33,9 +33,6 @@ class PriorityQueue(list):
 	def pop(self):
 		return self.heappop(self)
 
-	def rebuild(self):
-		heapq.heapify(self)
-
 """
 Ultra fast and compact npuzzle
 """
@@ -89,15 +86,6 @@ def heuristic_manhattan(cost_lc, cost_manh, npuzzle):
 		for i in State.board_range
 	])
 
-def last_max_dict(pdict):
-	max_k = list(pdict.keys())[0]
-	max_v = pdict[max_k]
-	for k, v in pdict.items():
-		if v > max_v:
-			max_v = v
-			max_k = k
-	return k
-
 def heuristic_lc(cost_lc, cost_manh, npuzzle):
 	board = npuzzle.board
 	size = npuzzle.size
@@ -110,18 +98,20 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 		lc_row_conflict = {}
 
 		# foreach Tj in Ri
-		for tj in range(row * size, (row + 1) * size):
+		for tj in range(row * size, (row + 1) * size, 1):
 			if board[tj] == 0 or cost_lc[board[tj]][1] != row:
 				continue
 			# C(Tj, Ri)
 			c_row = 0
 			lc_row_conflict[tj] = []
-			for c in range(row * size, tj):
-				if board[c] == 0:
+			for c in range(row * size, (row + 1) * size, 1):
+				if board[c] == 0 or cost_lc[board[tj]][1] != cost_lc[board[c]][1]:
 					continue
 				# Si on a un conflit de X vers X-1
-				if  cost_lc[board[tj]][1] == cost_lc[board[c]][1] \
-				and cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
+				if c < tj and cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
+					lc_row_conflict[tj].append(c)
+					c_row += 1
+				elif tj < c and cost_lc[board[c]][0] < cost_lc[board[tj]][0]:
 					lc_row_conflict[tj].append(c)
 					c_row += 1
 			lc_row[tj] = c_row
@@ -151,12 +141,14 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 			# C(Tj, Ri)
 			c_col = 0
 			lc_col_conflict[tj] = []
-			for c in range(col, tj, size):
-				if board[c] == 0:
+			for c in range(col, len(board), size):
+				if board[c] == 0 or cost_lc[board[tj]][0] != cost_lc[board[c]][0]:
 					continue
 				# Si on a un conflit de X vers X-1
-				if cost_lc[board[tj]][0] == cost_lc[board[c]][0] \
-				and cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
+				if c < tj and cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
+					lc_col_conflict[tj].append(c)
+					c_col += 1
+				elif tj < c and cost_lc[board[c]][1] < cost_lc[board[tj]][1]:
 					lc_col_conflict[tj].append(c)
 					c_col += 1
 			lc_col[tj] = c_col
@@ -171,6 +163,7 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 					lc_col[tj] -= 1
 				lc += 1
 				tk = max(lc_col, key=lc_col.get)
+
 	# 2 * lc + manh
 	return lc + lc + heuristic_manhattan(cost_lc, cost_manh, npuzzle)
 
@@ -223,6 +216,8 @@ class State:
 	# Pour le X in set
 	def __eq__(self, other):
 		return self.board == other.board
+	def __ne__(self, other):
+		return self.board != other.board
 
 def astar(start):
 	open_lst = PriorityQueue()
