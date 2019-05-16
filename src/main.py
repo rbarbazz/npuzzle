@@ -98,23 +98,26 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 		lc_row_conflict = {}
 
 		# foreach Tj in Ri
-		for tj in range(row * size, (row + 1) * size, 1):
+		for tj in range(row * size, (row + 1) * size):
 			if board[tj] == 0 or cost_lc[board[tj]][1] != row:
 				continue
 			# C(Tj, Ri)
-			c_row = 0
-			lc_row_conflict[tj] = []
-			for c in range(row * size, (row + 1) * size, 1):
-				if board[c] == 0 or cost_lc[board[tj]][1] != cost_lc[board[c]][1]:
+			if tj not in lc_row_conflict:
+				lc_row_conflict[tj] = []
+				lc_row[tj] = 0
+			for c in range(row * size, tj):
+				if board[c] == 0 \
+				or cost_lc[board[tj]][1] != cost_lc[board[c]][1]:
 					continue
 				# Si on a un conflit de X vers X-1
-				if c < tj and cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
+				if cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
 					lc_row_conflict[tj].append(c)
-					c_row += 1
-				elif tj < c and cost_lc[board[c]][0] < cost_lc[board[tj]][0]:
-					lc_row_conflict[tj].append(c)
-					c_row += 1
-			lc_row[tj] = c_row
+					lc_row[tj] += 1
+					if c not in lc_row_conflict:
+						lc_row_conflict[c] = []
+						lc_row[c] = 0
+					lc_row_conflict[c].append(tj)
+					lc_row[c] += 1
 
 		# While there is a non zero value in C
 		if len(lc_row):
@@ -139,19 +142,22 @@ def heuristic_lc(cost_lc, cost_manh, npuzzle):
 			if board[tj] == 0 or cost_lc[board[tj]][0] != col:
 				continue
 			# C(Tj, Ri)
-			c_col = 0
-			lc_col_conflict[tj] = []
-			for c in range(col, len(board), size):
-				if board[c] == 0 or cost_lc[board[tj]][0] != cost_lc[board[c]][0]:
+			if tj not in lc_col_conflict:
+				lc_col_conflict[tj] = []
+				lc_col[tj] = 0
+			for c in range(col, tj, size):
+				if board[c] == 0 \
+				or cost_lc[board[tj]][0] != cost_lc[board[c]][0]:
 					continue
 				# Si on a un conflit de X vers X-1
-				if c < tj and cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
+				if cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
 					lc_col_conflict[tj].append(c)
-					c_col += 1
-				elif tj < c and cost_lc[board[c]][1] < cost_lc[board[tj]][1]:
-					lc_col_conflict[tj].append(c)
-					c_col += 1
-			lc_col[tj] = c_col
+					lc_col[tj] += 1
+					if c not in lc_col_conflict:
+						lc_col_conflict[c] = []
+						lc_col[c] = 0
+					lc_col_conflict[c].append(tj)
+					lc_col[c] += 1
 		# While there is a non zero value in C
 		if len(lc_col):
 			tk = max(lc_col, key=lc_col.get)
