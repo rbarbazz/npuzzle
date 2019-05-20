@@ -11,12 +11,14 @@ from consts import *
 from npuzzle_gen import make_puzzle, make_goal
 from collections import OrderedDict
 
+
 """
 Possible actions
 """
 ACTIONS = {
 	"N": 0, "S": 1, "E": 2, "W": 3, "NONE": 4
 }
+
 
 """
 Ultra fast priority queue (binary heap with heapq)
@@ -32,6 +34,8 @@ class PriorityQueue(list):
 
 	def pop(self):
 		return self.heappop(self)
+	def heapify(self):
+		return heapq.heapify(self)
 
 """
 Ultra fast and compact npuzzle
@@ -86,92 +90,66 @@ def heuristic_manhattan(cost_lc, cost_manh, npuzzle):
 		for i in State.board_range
 	])
 
-def heuristic_lc(cost_lc, cost_manh, npuzzle):
+
+def get_lc(cost, board, size, sens, step):
+	lc = 0
+	# For each line ri of the puzzle
+	for side in range(0, size):
+		conflict_lst = {}
+		conflict_count = {}
+		if step == 1: # Row
+			start_range = side * size
+		else:
+			start_range = side
+		# For each block tj in ri
+		# tj = pos in the puzzle
+		for tj in range(start_range, start_range + step * size, step):
+			# If we are on the cursor, or a block from another goal, do nothing
+			if board[tj] == 0 or cost[board[tj]][sens[1]] != side:
+				continue
+			# First time we see this block, init
+			conflict_lst[tj] = []
+			conflict_count[tj] = 0
+			# For each block tk < tj
+			for tk in range(start_range, tj, step):
+				# If we are on the cursor, or a block from another goal
+				if board[tk] == 0 or cost[board[tk]][sens[1]] != side:
+					continue
+				# If cost[tk] > cost[tj] and tk < tj => conflict
+				if cost[board[tk]][sens[0]] > cost[board[tj]][sens[0]]:
+					conflict_lst[tj].append(tk)
+					conflict_count[tj] += 1
+					conflict_lst[tk].append(tj)
+					conflict_count[tk] += 1
+
+		if len(conflict_lst):
+			# While their are conflicts, take the biggest
+			tk = max(conflict_count, key=conflict_count.get)
+			while conflict_count[tk] > 0:
+				# Remove tk
+				conflict_count[tk] = 0
+				# For each conflict with tk (left and right)
+				for c in conflict_lst[tk]:
+					conflict_count[c] -= 1
+				# Inc linear conflicts
+				lc += 1
+				tk = max(conflict_count, key=conflict_count.get)
+	return lc
+
+
+def heuristic_lc(cost, cost_manh, npuzzle):
 	board = npuzzle.board
 	size = npuzzle.size
+
 	lc = 0
-	# Iterate rows
-	# foreach Ri in S
-	for row in range(0, size):
-		# Conflit dans la ligne
-		lc_row = {}
-		lc_row_conflict = {}
-
-		# foreach Tj in Ri
-		for tj in range(row * size, (row + 1) * size):
-			if board[tj] == 0 or cost_lc[board[tj]][1] != row:
-				continue
-			# C(Tj, Ri)
-			if tj not in lc_row_conflict:
-				lc_row_conflict[tj] = []
-				lc_row[tj] = 0
-			for c in range(row * size, tj):
-				if board[c] == 0 \
-				or cost_lc[board[tj]][1] != cost_lc[board[c]][1]:
-					continue
-				# Si on a un conflit de X vers X-1
-				if cost_lc[board[tj]][0] < cost_lc[board[c]][0]:
-					lc_row_conflict[tj].append(c)
-					lc_row[tj] += 1
-					if c not in lc_row_conflict:
-						lc_row_conflict[c] = []
-						lc_row[c] = 0
-					lc_row_conflict[c].append(tj)
-					lc_row[c] += 1
-
-		# While there is a non zero value in C
-		if len(lc_row):
-			tk = max(lc_row, key=lc_row.get)
-			while lc_row[tk] > 0:
-				# Remove tk
-				lc_row[tk] = 0
-				# Pour chaque tile tj en conflit with tk, faire -1
-				for tj in lc_row_conflict[tk]:
-					lc_row[tj] -= 1
-				lc += 1
-				tk = max(lc_row, key=lc_row.get)
-
-	# foreach Ci in S
-	for col in range(0, size):
-		# Conflit dans la ligne
-		lc_col = {}
-		lc_col_conflict = {}
-
-		# foreach Tj in Ri
-		for tj in range(col, len(board), size):
-			if board[tj] == 0 or cost_lc[board[tj]][0] != col:
-				continue
-			# C(Tj, Ri)
-			if tj not in lc_col_conflict:
-				lc_col_conflict[tj] = []
-				lc_col[tj] = 0
-			for c in range(col, tj, size):
-				if board[c] == 0 \
-				or cost_lc[board[tj]][0] != cost_lc[board[c]][0]:
-					continue
-				# Si on a un conflit de X vers X-1
-				if cost_lc[board[tj]][1] < cost_lc[board[c]][1]:
-					lc_col_conflict[tj].append(c)
-					lc_col[tj] += 1
-					if c not in lc_col_conflict:
-						lc_col_conflict[c] = []
-						lc_col[c] = 0
-					lc_col_conflict[c].append(tj)
-					lc_col[c] += 1
-		# While there is a non zero value in C
-		if len(lc_col):
-			tk = max(lc_col, key=lc_col.get)
-			while lc_col[tk] > 0:
-				# Remove tk
-				lc_col[tk] = 0
-				# Pour chaque tile tj en conflit with tk, faire -1
-				for tj in lc_col_conflict[tk]:
-					lc_col[tj] -= 1
-				lc += 1
-				tk = max(lc_col, key=lc_col.get)
+	# Row
+	lc += get_lc(cost, board, size, (0, 1), 1)
+	# Col
+	lc += get_lc(cost, board, size, (1, 0), size)
 
 	# 2 * lc + manh
-	return lc + lc + heuristic_manhattan(cost_lc, cost_manh, npuzzle)
+	return lc + lc + heuristic_manhattan(cost, cost_manh, npuzzle)
+
 
 """
 Node of the Astar
@@ -216,14 +194,16 @@ class State:
 		return self._hash
 	# Pour le tri et la comparaison
 	def __lt__(self, other):
-		return self.weight < other.weight
-	def __gt__(self, other):
-		return self.weight > other.weight
+		if self.weight != other.weight:
+			return self.weight < other.weight
+		if self.heuristic != other.heuristic:
+			return self.heuristic < other.heuristic
+		return self.cost < other.cost
+		# return self.weight < other.weight
 	# Pour le X in set
 	def __eq__(self, other):
 		return self.board == other.board
-	def __ne__(self, other):
-		return self.board != other.board
+
 
 def astar(start):
 	open_lst = PriorityQueue()
@@ -236,9 +216,15 @@ def astar(start):
 	found = False
 	found_state = None
 	while (len(open_lst) > 0):
-		curr_state = open_lst.pop()
-		del open_set[curr_state]
-		close_set[curr_state] = 1
+		# Check empty
+		while True:
+			curr_state = open_lst.pop()
+			# Si on tombe sur un marque, on le skippe et on reessaie
+			if curr_state.cost == -1:
+				continue
+			del open_set[curr_state]
+			close_set[curr_state] = True
+			break
 
 		found_state = curr_state
 		if not curr_state.heuristic:
@@ -250,16 +236,11 @@ def astar(start):
 				continue
 			elif next_state in open_set:
 				old = open_set[next_state]
-				if next_state.weight < old.weight:
-					old.cost = next_state.cost
-					old.heuristic = next_state.heuristic
-					old.weight = next_state.weight
-					old.parent = next_state.parent
-					old.action = next_state.action
-					# rebuild = True
-					# open_lst.remove(old)
-					# open_lst.push(next_state)
-					# open_set[next_state] = next_state
+				if next_state < old:
+					# Mark it, push new and update set
+					old.cost = -1
+					open_lst.push(next_state)
+					open_set[next_state] = next_state
 			else:
 				open_lst.push(next_state)
 				open_set[next_state] = next_state
@@ -278,18 +259,6 @@ def astar(start):
 			count_turn, count_node, found_state.cost))
 	print()
 	return 0
-
-def solvable(taquin):
-	inv = 0
-	for i, v in enumerate(taquin.board):
-		if v == 0:
-			continue
-		for w in taquin.board[i:]:
-			if w == 0:
-				continue
-			if v > w:
-				inv += 1
-	return inv % 2 == 0
 
 
 def main():
@@ -330,37 +299,10 @@ def main():
 		for pos in range(0, len(goal.board))
 	])
 
-	# if not solvable(taquin_base):
-	# 	print("Not solvable")
-	# 	return 0
-
 	astar(taquin_base)
 
 	return 0
 
-# Goal
-#  1,  2,  3, 4,
-# 12, 13, 14, 5,
-# 11,  0, 15, 6,
-# 10,  9,  8, 7,
-
-# Base
-# 5,  4,  9, 15,
-# 6,  2,  8, 11,
-# 1, 12,  7,  0,
-# 3, 13, 14, 10,
-
-#Manh = 2 + 1 + 5 + 2 + 4 + 4 + 2 + 2 + 4 + 3 + 4 + 2 + 2 + 2 + 3 = 42
-#lc = 2 * (1) = 2
-
-# 1er ou h > min moves (m=33, lc=35)
-#  5,  2,  7,  4,
-#  1,  6,  9, 15,
-# 12, 11,  8, 10,
-#  3, 13, 14,  0,
-
-#Manh = 1 + 0 + 5 + 0 + 4 + 3 + 4 + 1 + 3 + 4 + 1 + 1 + 2 + 2 + 2 = 33
-# lc = 2 * (1) = 2
 
 if __name__ == '__main__':
 	sys.exit(main())

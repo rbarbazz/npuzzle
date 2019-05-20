@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #
-SIZE = 0
+SIZE = 3
 HEUR = 1
 GOAL = "goal_4_esca"
 BASE = "base_4_arobion"
