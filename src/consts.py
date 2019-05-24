@@ -1,16 +1,43 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #
-SIZE = 3
-HEUR = 1
+SIZE = 0
+HEUR = 0
+GREEDY = False
+
+"""
+			Benchmark on base_4_arobion
+Greedy:
+	Uniform: Cancelled at 9.45M of nodes (20.01M tested), 10M56 turns, 14.10Go ram
+	Manhattan: 11 063 nodes, 5513 turns, 174 moves
+	Linear conflicts: 746 nodes, 356 turns, 114 moves
+	Custom: 746 nodes, 356 turns, 114 moves
+A*:
+	Uniform: Cancelled at 9.45M of nodes (20.01M tested), 10M56 turns, 14.10Go ram
+	Manhattan: 229464 nodes, 119145 turns, 52 moves, 185Mo ram
+	Linear conflicts: 95645 nodes, 49225 turns, 52 moves, 80Mo ram
+	Custom: 746 nodes, 356 turns, 114 moves, Mo ram
+
+Conclusion:
+Greedy is ultimately fast, but gives very poor results
+Uniform is super slow since it explores all cases, give best result
+Other heurisitcs are fast and give the best result (with an acceptable heuristic)
+We can achieve pretty good result with a custom but non acceptable heuristic
+"""
+
 GOAL = "goal_4_esca"
 BASE = "base_4_arobion"
-#GOAL = "goal_3_top"
-#BASE = "base_31_top"
+# GOAL = "goal_3_top"
+# BASE = "base_31_top"
 
 """
 52 moves, 14sec à 42 (manh et linear conflicts) arobion
 52 moves, 18sec à 42 chez nous (manh)
+"""
+
+"""
+Maximum valid state of 3: 9! / 2 = 181 440, max moves 31
+Maximum valid state of 4: 16! / 2 = 10 461 394 944 000, max moves 61 ?
 """
 
 TAQUINS = {
@@ -32,4 +59,6 @@ TAQUINS = {
 
 	"base_5": [4, 6, 12, 19, 9, 3, 8, 20, 17, 16, 22, 18, 0, 13, 15, 5, 21, 23,
 				2, 1, 24, 14, 10, 11, 7],
+
+	"base_3_failbutok" : [6, 5, 1, 4, 2, 7, 3, 0, 8],
 }
