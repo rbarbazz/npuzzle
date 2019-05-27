@@ -2,8 +2,8 @@
 #-*- coding: utf-8 -*-
 #
 SIZE = 0
-HEUR = 0
-GREEDY = False
+HEUR = 1
+GREEDY = True
 
 """
 			Benchmark on base_4_arobion
@@ -17,6 +17,8 @@ A*:
 	Manhattan: 229464 nodes, 119145 turns, 52 moves, 185Mo ram
 	Linear conflicts: 95645 nodes, 49225 turns, 52 moves, 80Mo ram
 	Custom: 746 nodes, 356 turns, 114 moves, Mo ram
+
+For 4+ size, hamming and euclidian are very bad
 
 Conclusion:
 Greedy is ultimately fast, but gives very poor results
