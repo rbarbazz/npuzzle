@@ -1,9 +1,18 @@
 #!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #
+
 SIZE = 0
 HEUR = 1
-GREEDY = True
+GREEDY = False
+SOLVABLE = True
+ITERATIONS = 3000
+CONTINUE = False
+
+GOAL = "goal_4_esca"
+BASE = "base_4_arobion"
+# GOAL = "goal_3_top"
+# BASE = "base_31_top"
 
 """
 			Benchmark on base_4_arobion
@@ -26,11 +35,6 @@ Uniform is super slow since it explores all cases, give best result
 Other heurisitcs are fast and give the best result (with an acceptable heuristic)
 We can achieve pretty good result with a custom but non acceptable heuristic
 """
-
-GOAL = "goal_4_esca"
-BASE = "base_4_arobion"
-# GOAL = "goal_3_top"
-# BASE = "base_31_top"
 
 """
 52 moves, 14sec à 42 (manh et linear conflicts) arobion
@@ -55,12 +59,14 @@ TAQUINS = {
 	"base_31_2_top" : [8, 0, 6,  5, 4, 7, 2, 3, 1],
 
 	"base_4_arobion": [5, 4, 9, 15, 6, 2, 8, 11, 1, 12, 7, 0, 3, 13, 14, 10],
-	# cost = 25, heur = 29, lc = 33 => 43 moves, soit 25 + 43 = 68 (f = 54)
 	"base_4_sub_arobion": [12, 1, 5, 4, 6, 11, 2, 15, 0, 9, 8, 7, 3, 13, 14, 10],
 	"base_4_test": [5, 7, 15, 12, 0, 1, 3, 14, 6, 11, 9, 8, 2, 10, 4, 13],
 
 	"base_5": [4, 6, 12, 19, 9, 3, 8, 20, 17, 16, 22, 18, 0, 13, 15, 5, 21, 23,
 				2, 1, 24, 14, 10, 11, 7],
 
-	"base_3_failbutok" : [6, 5, 1, 4, 2, 7, 3, 0, 8],
 }
+
+
+if __name__ == '__main__':
+	pass
