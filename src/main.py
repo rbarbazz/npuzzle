@@ -7,9 +7,11 @@ import gc
 import resource
 import math
 import heapq
-from consts import *
-from npuzzle_gen import make_puzzle, make_goal
 
+from npuzzle_gen import make_puzzle, make_goal
+from consts import *
+from heuristic import *
+from env import Env
 
 """
 Possible actions
@@ -82,142 +84,23 @@ class NPuzzle:
 
 
 """
-Ultra fast manhattan heurstic, precomputed
-Admissible and monotonic -> always give best path
-"""
-def heuristic_manhattan(npuzzle):
-	board = npuzzle.board
-	cost = State.pre_man
-	return sum([
-		cost[i][board[i]]
-		for i in State.board_range
-	])
-
-def get_lc(cost, board, size, sens, step):
-	lc = 0
-	# For each line ri of the puzzle
-	for side in range(0, size):
-		conflict_lst = {}
-		conflict_count = {}
-		if step == 1: # Row
-			start_range = side * size
-		else:
-			start_range = side
-		# For each block tj in ri
-		# tj = pos in the puzzle
-		for tj in range(start_range, start_range + step * size, step):
-			# If we are on the cursor, or a block from another goal, do nothing
-			if board[tj] == 0 or cost[board[tj]][sens[1]] != side:
-				continue
-			# First time we see this block, init
-			conflict_lst[tj] = []
-			conflict_count[tj] = 0
-			# For each block tk < tj
-			for tk in range(start_range, tj, step):
-				# If we are on the cursor, or a block from another goal
-				if board[tk] == 0 or cost[board[tk]][sens[1]] != side:
-					continue
-				# If cost[tk] > cost[tj] and tk < tj => conflict
-				if cost[board[tk]][sens[0]] > cost[board[tj]][sens[0]]:
-					conflict_lst[tj].append(tk)
-					conflict_count[tj] += 1
-					conflict_lst[tk].append(tj)
-					conflict_count[tk] += 1
-
-		if len(conflict_lst):
-			# While their are conflicts, take the biggest
-			tk = max(conflict_count, key=conflict_count.get)
-			while conflict_count[tk] > 0:
-				# Remove tk
-				conflict_count[tk] = 0
-				# For each conflict with tk (left and right)
-				for c in conflict_lst[tk]:
-					conflict_count[c] -= 1
-				# Inc linear conflicts
-				lc += 1
-				tk = max(conflict_count, key=conflict_count.get)
-	return lc
-
-
-def heuristic_lc(npuzzle):
-	board = npuzzle.board
-	size = npuzzle.size
-	cost = State.pre_lc
-	lc = 0
-	# Row
-	lc += get_lc(cost, board, size, (0, 1), 1)
-	# Col
-	lc += get_lc(cost, board, size, (1, 0), size)
-	# 2 * lc + manh
-	return lc + lc + heuristic_manhattan(npuzzle)
-
-
-"""
-Uniform heuristic -> Djisktra
-"""
-def heuristic_uniform(npuzzle):
-	return 0
-
-"""
-Count placed tile
-"""
-def heuristic_hamming_good(npuzzle):
-	board = npuzzle.board
-	goal = State.pre_goal
-	tt = 0
-	for i in State.board_range:
-		if board[i] != 0 and board[i] == goal[i]:
-			tt += 1
-	return tt
-
-"""
-Count bad placed tile
-"""
-def heuristic_hamming_bad(npuzzle):
-	board = npuzzle.board
-	goal = State.pre_goal
-	tt = 0
-	for i in State.board_range:
-		if board[i] != 0 and board[i] != goal[i]:
-			tt += 1
-	return tt
-
-"""
-
-"""
-def heuristic_euclidienne(npuzzle):
-	board = npuzzle.board
-	cost_euc = State.pre_euc
-	return int(sum([
-		cost_euc[i][board[i]]
-		for i in State.board_range
-	]))
-
-
-
-"""
 Node of the Astar
 Greedy: weight = heuristic (cost is out of the equation)
 Djisktra: weight = cost
 """
 class State:
-	pre_goal = []
-	pre_man = []
-	pre_lc = []
-	pre_euc = []
-	board_range = None
-	heuristic_fun = heuristic_manhattan
-	greedy = False
+	env = None
 
 	def __init__(self, taquin, action, parent, cost):
 		self.action = action	# Action performs from last state
 		self.parent = parent	# Ref to previous state
 		self.cost = cost		# +1 each step
-		self.taquin = NPuzzle(taquin.board, taquin.size, taquin.pos)# Current taquin
+		# Current npuzzle
+		self.taquin = NPuzzle(taquin.board, taquin.size, taquin.pos)
 		self.taquin.move(action)
-		self.heuristic = State.heuristic_fun(self.taquin)
+		self.heuristic = State.env.heuristic(State.env, self.taquin)
 		# Cache
-		self.weight = self.heuristic + (0 if State.greedy else self.cost)
+		self.weight = self.heuristic + (0 if State.env.greedy else self.cost)
 		self.board = self.taquin.board
 		self._hash = hash(str(self.board))
 
@@ -248,20 +131,18 @@ class State:
 		if self.heuristic != other.heuristic:
 			return self.heuristic < other.heuristic
 		return self.cost < other.cost
-		# return self.weight < other.weight
 
 	# Pour le X in set
 	def __eq__(self, other):
 		return self.board == other.board
 
 
-def astar(start, goal):
+def astar(state_start):
 	open_lst = PriorityQueue()
 	open_set = {}
 	close_set = {}
-	init_state = State(start, NONE, None, 0)
-	open_lst.push(init_state)
-	open_set[init_state] = init_state
+	open_lst.push(state_start)
+	open_set[state_start] = state_start
 	count_turn, count_node = 0, 1
 	found = False
 	curr_state = None
@@ -282,7 +163,7 @@ def astar(start, goal):
 		if curr_state is None:
 			break
 
-		if curr_state == goal:
+		if curr_state == State.env.goal:
 			found = True
 			break
 
@@ -317,6 +198,7 @@ def astar(start, goal):
 	print()
 	return 0
 
+
 def count_inversion(base, goal):
 	tt_inv = 0
 	for i in range(0, len(base.board) - 1):
@@ -329,14 +211,8 @@ def count_inversion(base, goal):
 				tt_inv += 1
 	return tt_inv
 
-"""
-If puzzle is odd:
-	- Return True if inversion are even
-If puzzle is even:
-	- Return True if cursor is on even row from bottom and inversion is odd
-	- Return True if cursor is on odd row from bottom and inversion is even
-Return False in any other cases
 
+"""
 If multiple of 4 -> return even if y % 2 else not even
 else if multiple of 2-> return not even if y % 2 else even
 else if odd -> return even
@@ -355,74 +231,46 @@ def solvable(puzzle, goal):
 			return even
 	return even
 
+
 def main():
 	if SIZE:
 		n_goal = make_goal(SIZE)
-		n_taq = make_puzzle(SIZE, solvable=True, iterations=3000)
+		n_taq = make_puzzle(SIZE, solvable=SOLVABLE, iterations=ITERATIONS)
 	else:
 		n_goal = TAQUINS[GOAL]
 		n_taq = TAQUINS[BASE]
 	print("Base: {}".format(n_taq))
 	print("Goal: {}".format(n_goal))
 
-	taquin_base = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
-	goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
+	npuzzle_start = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
+	npuzzle_goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
 
-	State.board_range = range(0, len(goal.board))
 	if HEUR == 0:
-		State.heuristic_fun = heuristic_uniform
+		heuristic = heuristic_uniform
 	elif HEUR == 1:
-		State.heuristic_fun = heuristic_manhattan
+		heuristic = heuristic_manhattan
 	elif HEUR == 2:
-		State.heuristic_fun = heuristic_lc
+		heuristic = heuristic_lc
 	elif HEUR == 3:
-		State.heuristic_fun = heuristic_hamming_bad
+		heuristic = heuristic_hamming_bad
 	elif HEUR == 4:
-		State.heuristic_fun = heuristic_hamming_good
+		heuristic = heuristic_hamming_good
 	elif HEUR == 5:
-		State.heuristic_fun = heuristic_euclidienne
-	State.greedy = GREEDY
+		heuristic = heuristic_euclidienne
+	else:
+		heuristic = heuristic_manhattan
 
-	def _manh(fromm, to, board, size):
-		if to == 0:
-			return 0
-		r = abs(fromm % size - board.index(to) % size) \
-			+ abs(fromm // size - board.index(to) // size)
-		return r
-	State.pre_man = tuple([tuple([
-			_manh(fromm, to, goal.board, goal.size)
-		for to in range(0, len(goal.board))])
-	for fromm in range(0, len(goal.board))])
+	State.env = Env(npuzzle_goal, heuristic, GREEDY)
+	state_start = State(npuzzle_start, NONE, None, 0)
 
-	def _euc(fromm, to, board, size):
-		if to == 0:
-			return 0.0
-		r = math.sqrt((fromm % size - board.index(to) % size) ** 2 \
-			+ (fromm // size - board.index(to) // size) ** 2)
-		return r
-	State.pre_euc = tuple([tuple([
-			_euc(fromm, to, goal.board, goal.size)
-		for to in range(0, len(goal.board))])
-	for fromm in range(0, len(goal.board))])
-
-	def _lc(pos, board, size):
-		if pos == 0:
-			return [9999, 9999] # Should never be picked
-		r = [abs(board.index(pos) % size), abs(board.index(pos) // size)]
-		return r
-	State.pre_lc = tuple([
-			tuple(_lc(pos, goal.board, goal.size))
-		for pos in range(0, len(goal.board))
-	])
-	State.pre_goal = goal.board
-
-	if not solvable(taquin_base, goal):
+	if not solvable(npuzzle_start, npuzzle_goal):
 		print("Not solvable")
-		return 0
+		if not CONTINUE:
+			return 0
 
 	# Ok puisqu'on garde la majorite des noeuds crees, +5-15% perf
 	gc.disable()
-	astar(taquin_base, goal)
+	astar(state_start)
 	gc.enable()
 	return 0
 
