@@ -3,15 +3,20 @@
 #
 
 import sys
+import signal
 import gc
-import resource
 import math
 import heapq
 
 from npuzzle_gen import make_puzzle, make_goal
-from consts import *
+# from consts import *
 from heuristic import *
-from env import Env
+from env import Env, get_mem_usage
+from parser import parser, ARGUMENTS
+
+CONTINUE = False
+
+
 
 """
 Possible actions
@@ -138,17 +143,16 @@ class State:
 		return self.board == other.board
 
 
-def astar(state_start):
+def astar(env, state_start):
 	open_lst = PriorityQueue()
 	open_set = {}
 	close_set = {}
 	open_lst.push(state_start)
 	open_set[state_start] = state_start
-	count_turn, count_node = 0, 1
 	found = False
 	curr_state = None
+	env.up_mem()
 	while (len(open_lst) > 0):
-
 		while True:
 			try:
 				curr_state = open_lst.pop()
@@ -181,23 +185,31 @@ def astar(state_start):
 			else:
 				open_lst.push(next_state)
 				open_set[next_state] = next_state
-				count_node += 1
+				env.stats["nodes_created"] += 1
 
-		count_turn += 1
-		if count_turn % 10000 == 0:
-			print("{} - {} turns, {} nodes, {} Mo".format(
-				len(open_lst), count_turn, count_node,
-				int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
-			))
+		env.stats["turns"] += 1
+		if env.stats["turns"] % 1000 == 0:
+			env.up_mem()
+		if len(open_lst) > env.stats["nodes_stocked"]:
+			env.stats["nodes_stocked"] = len(open_lst)
 
+		if env.verbose and env.stats["turns"] % 5000 == 0:
+			print("\rTurn: {} \tNodes: {} \tRAM Mo: {}".format(
+				env.stats["turns"], env.stats["nodes_created"],
+				env.stats["memory"]
+			), end='')
+
+	if env.verbose:
+		print()
+
+	# Store solution
 	if found:
-		print("Success: ")
-	else:
-		print("Failure: ")
-	print("turn = {}, nodes = {}, moves = {}".format(
-			count_turn, count_node, 0 if curr_state is None else curr_state.cost))
-	print()
-	return 0
+		while curr_state.parent is not None:
+			env.solution.append(curr_state)
+			curr_state = curr_state.parent
+		env.solution.reverse()
+
+	return found
 
 
 def count_inversion(base, goal):
@@ -233,46 +245,75 @@ def solvable(puzzle, goal):
 	return even
 
 
+def signal_handler(sig, frame):
+	if sig == signal.SIGINT:
+		sys.exit(0)
+
+
 def main():
-	if SIZE:
-		n_goal = make_goal(SIZE)
-		n_taq = make_puzzle(SIZE, solvable=SOLVABLE, iterations=ITERATIONS)
+	signal.signal(signal.SIGINT, signal_handler)
+	parser()
+
+	if ARGUMENTS['size']:
+		n_goal = make_goal(ARGUMENTS['size'])
+		n_taq = make_puzzle(ARGUMENTS['size'], solvable=ARGUMENTS['solvable'], iterations=ARGUMENTS['iterations'])
 	else:
-		n_goal = TAQUINS[GOAL]
-		n_taq = TAQUINS[BASE]
-	print("Base: {}".format(n_taq))
-	print("Goal: {}".format(n_goal))
+		n_goal = ARGUMENTS['goal']
+		n_taq = ARGUMENTS['base']
 
 	npuzzle_start = NPuzzle(n_taq, int(math.sqrt(len(n_taq))), n_taq.index(0))
 	npuzzle_goal = NPuzzle(n_goal, int(math.sqrt(len(n_goal))), n_goal.index(0))
 
-	if HEUR == 0:
+	if ARGUMENTS['heur'] == 0:
 		heuristic = heuristic_uniform
-	elif HEUR == 1:
+	elif ARGUMENTS['heur'] == 1:
 		heuristic = heuristic_manhattan
-	elif HEUR == 2:
+	elif ARGUMENTS['heur'] == 2:
 		heuristic = heuristic_lc
-	elif HEUR == 3:
+	elif ARGUMENTS['heur'] == 3:
 		heuristic = heuristic_hamming_bad
-	elif HEUR == 4:
+	elif ARGUMENTS['heur'] == 4:
 		heuristic = heuristic_hamming_good
-	elif HEUR == 5:
+	elif ARGUMENTS['heur'] == 5:
 		heuristic = heuristic_euclidienne
 	else:
 		heuristic = heuristic_manhattan
 
-	State.env = Env(npuzzle_goal, heuristic, GREEDY)
+	env = Env(npuzzle_goal, heuristic, ARGUMENTS['greedy'], True)
+	State.env = env
 	state_start = State(npuzzle_start, NONE, None, 0)
 
+
+	if env.verbose:
+		print("Initial npuzzle:\t{}".format(n_taq))
+		print("Goal npuzzle:\t\t{}".format(n_goal))
+		print()
+
 	if not solvable(npuzzle_start, npuzzle_goal):
-		print("Not solvable")
+		if env.verbose:
+			print("Not solvable")
 		if not CONTINUE:
 			return 0
 
 	# Ok puisqu'on garde la majorite des noeuds crees, +5-15% perf
 	gc.disable()
-	astar(state_start)
+	found = astar(env, state_start)
 	gc.enable()
+
+	if env.verbose:
+		print()
+		if not found:
+			print("Failure :(")
+		else:
+			env.up_mem()
+			print("Success :)")
+			print(("{} moves in {} turns, {} nodes explored with a maximum of "
+				"{} nodes stocked at one time."
+				"\nTotal memory used: {} Mo").format(
+				len(env.solution), env.stats["turns"],
+				env.stats["nodes_created"], env.stats["nodes_stocked"],
+				env.stats["memory"]))
+		print()
 	return 0
 
 
