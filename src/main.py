@@ -21,6 +21,7 @@ DOWN = 1
 EAST = 2
 WEST = 3
 NONE = 4
+DELETE = 5
 
 """
 Ultra fast priority queue (binary heap with heapq)
@@ -155,7 +156,7 @@ def astar(state_start):
 				curr_state = None
 				break
 			# Si on tombe sur un marque, on le skippe et on reessaie
-			if curr_state.cost == -1:
+			if curr_state.action == DELETE:
 				continue
 			del open_set[curr_state]
 			close_set[curr_state] = 0
@@ -174,7 +175,7 @@ def astar(state_start):
 				old = open_set[next_state]
 				if next_state < old:
 					# Mark it, push new and update set
-					old.cost = -1
+					old.action = DELETE
 					open_lst.push(next_state)
 					open_set[next_state] = next_state
 			else:
