@@ -4,7 +4,7 @@
 
 SIZE = 0
 HEUR = 1
-GREEDY = False
+GREEDY = True
 SOLVABLE = True
 ITERATIONS = 3000
 CONTINUE = False

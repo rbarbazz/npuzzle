@@ -62,6 +62,16 @@ def heuristic_euclidienne(env, npuzzle):
 
 """
 
+5,  4,  3, 15,
+6,  2,  8, 11,
+1, 12,  7,  0,
+9, 13, 14, 10
+
+ 1,  2,  3, 4,
+12, 13, 14, 5,
+11,  0, 15, 6,
+10,  9,  8, 7
+
 """
 def get_lc(env, cost, board, size, sens, step):
 	lc = 0

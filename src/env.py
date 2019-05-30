@@ -2,7 +2,8 @@
 #-*- coding: utf-8 -*-
 #
 
-import math
+from math import sqrt
+from resource import getrusage, RUSAGE_SELF
 
 
 def precalc_manhattan(goal):
@@ -22,7 +23,7 @@ def precalc_euclidian(goal):
 	def _euc(fromm, to, board, size):
 		if to == 0:
 			return 0.0
-		r = math.sqrt((fromm % size - board.index(to) % size) ** 2 \
+		r = sqrt((fromm % size - board.index(to) % size) ** 2 \
 			+ (fromm // size - board.index(to) // size) ** 2)
 		return r
 	return tuple([tuple([
@@ -43,8 +44,15 @@ def precalc_linear_conflicts(goal):
 		])
 
 
+"""
+	Return memory used by program in bytes on mac, Kbytes on linux
+"""
+def get_mem_usage():
+	return getrusage(RUSAGE_SELF).ru_maxrss
+
+
 class Env:
-	def __init__(self, p_npuzzle, p_heuristic, p_greedy):
+	def __init__(self, p_npuzzle, p_heuristic, p_greedy, p_verbose):
 		self.goal = p_npuzzle
 		self.len_range = range(0, len(self.goal.board))
 		self.size_range = range(0, self.goal.size)
@@ -53,6 +61,17 @@ class Env:
 		self.pre_man = precalc_manhattan(self.goal)
 		self.pre_lc = precalc_linear_conflicts(self.goal)
 		self.pre_euc = precalc_euclidian(self.goal)
+		self.stats = {
+			"nodes_stocked": 1,
+			"nodes_created": 1,
+			"turns": 0,
+			"memory": 0
+		}
+		self.solution = []
+		self.verbose = p_verbose
+
+	def up_mem(self):
+		self.stats["memory"] = int(get_mem_usage() / 1048576)
 
 
 if __name__ == '__main__':
