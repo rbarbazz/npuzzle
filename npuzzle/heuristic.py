@@ -3,11 +3,27 @@
 #
 
 
+HEURISTICS_LIST = [
+	"uniform",
+	"manhattan",
+	"euclidian",
+	"linear_conflicts",
+	"hamming_good",
+	"hamming_bad",
+]
+
+__all__ = HEURISTICS_LIST + ["get_available_heuristics"]
+
+
+def get_available_heuristics():
+	return HEURISTICS_LIST
+
+
 """
 Ultra fast manhattan heurstic, precomputed
 Admissible and monotonic -> always give best path
 """
-def heuristic_manhattan(env, npuzzle):
+def manhattan(env, npuzzle):
 	board = npuzzle.board
 	cost = env.pre_man
 	return sum([
@@ -19,13 +35,14 @@ def heuristic_manhattan(env, npuzzle):
 """
 Uniform heuristic -> Djisktra
 """
-def heuristic_uniform(env, npuzzle):
+def uniform(env, npuzzle):
 	return 0
+
 
 """
 Count placed tile
 """
-def heuristic_hamming_good(env, npuzzle):
+def hamming_good(env, npuzzle):
 	board = npuzzle.board
 	goal = env.goal.board
 	tt = 0
@@ -38,7 +55,7 @@ def heuristic_hamming_good(env, npuzzle):
 """
 Count bad placed tile
 """
-def heuristic_hamming_bad(env, npuzzle):
+def hamming_bad(env, npuzzle):
 	board = npuzzle.board
 	goal = env.goal.board
 	tt = 0
@@ -51,7 +68,7 @@ def heuristic_hamming_bad(env, npuzzle):
 """
 
 """
-def heuristic_euclidienne(env, npuzzle):
+def euclidian(env, npuzzle):
 	board = npuzzle.board
 	cost_euc = env.pre_euc
 	return int(sum([
@@ -62,18 +79,9 @@ def heuristic_euclidienne(env, npuzzle):
 
 """
 
-5,  4,  3, 15,
-6,  2,  8, 11,
-1, 12,  7,  0,
-9, 13, 14, 10
-
- 1,  2,  3, 4,
-12, 13, 14, 5,
-11,  0, 15, 6,
-10,  9,  8, 7
 
 """
-def get_lc(env, cost, board, size, sens, step):
+def _get_lc(env, cost, board, size, sens, step):
 	lc = 0
 	# For each line ri of the puzzle
 	for side in env.size_range:
@@ -122,15 +130,15 @@ def get_lc(env, cost, board, size, sens, step):
 """
 
 """
-def heuristic_lc(env, npuzzle):
+def linear_conflicts(env, npuzzle):
 	board = npuzzle.board
 	size = npuzzle.size
 	cost = env.pre_lc
 	lc = 0
 	# Row
-	lc += get_lc(env, cost, board, size, (0, 1), 1)
+	lc += _get_lc(env, cost, board, size, (0, 1), 1)
 	# Col
-	lc += get_lc(env, cost, board, size, (1, 0), size)
+	lc += _get_lc(env, cost, board, size, (1, 0), size)
 	# 2 * lc + manh
 	return lc + lc + heuristic_manhattan(env, npuzzle)
 
