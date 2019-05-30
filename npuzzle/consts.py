@@ -3,8 +3,8 @@
 #
 
 SIZE = 0
-HEUR = 1
-GREEDY = True
+HEUR = 2
+GREEDY = False
 SOLVABLE = True
 ITERATIONS = 3000
 CONTINUE = False
