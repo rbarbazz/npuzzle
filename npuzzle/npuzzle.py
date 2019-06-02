@@ -8,10 +8,8 @@ import gc
 import math
 import heapq
 
-from npuzzle_gen import make_puzzle, make_goal
-from heuristic import *
-from env import Env, get_mem_usage
-from parser import parser, ARGUMENTS
+from .heuristic import *
+from .env import Env, get_mem_usage
 
 
 CONTINUE = False
@@ -243,3 +241,8 @@ def solvable(puzzle, goal):
 		else:
 			return even
 	return even
+
+
+def make_taquin(npuzzle_input):
+	return NPuzzle(npuzzle_input, int(math.sqrt(len(npuzzle_input))),
+		npuzzle_input.index(0))

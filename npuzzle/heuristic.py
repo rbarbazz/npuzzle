@@ -12,11 +12,7 @@ HEURISTICS_LIST = [
 	"hamming_bad",
 ]
 
-__all__ = HEURISTICS_LIST + ["get_available_heuristics"]
-
-
-def get_available_heuristics():
-	return HEURISTICS_LIST
+__all__ = HEURISTICS_LIST
 
 
 """
