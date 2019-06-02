@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 from npuzzle import api
 import os
 
@@ -13,9 +13,18 @@ def npuzzle_web():
 
 @app.route('/check_solvability')
 def check_solvability():
-    print(request.args['inputPuzzle'])
-    # return api.check_solvability()
-    return 200
+    inputPuzzle = request.args.get('inputPuzzle')
+    dataJson = api.check_solvability('snale', list(map(int, inputPuzzle.split())))
+    return jsonify(dataJson)
+
+
+@app.route('/make_random')
+def make_random():
+    size = request.args.get('size')
+    isSolvable = request.args.get('isSolvable')
+    iterations = request.args.get('iterations')
+    dataJson = api.make_random('snale', int(size), bool(isSolvable), int(iterations))
+    return jsonify(dataJson)
 
 if __name__ == "__main__":
     app.run(debug=True)
