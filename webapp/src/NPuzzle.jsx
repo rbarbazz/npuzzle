@@ -1,4 +1,5 @@
 import React, { Component} from "react"
+import axios from "axios"
 import "./NPuzzle.css"
 
 
@@ -6,10 +7,11 @@ class NPuzzle extends Component{
 	constructor(props) {
 		super(props)
 		this.state = {
-			basePuzzle: [],
+			inputPuzzle: '',
 			size: 3,
 			stepNumber: 0,
-			iterations: 3000
+			iterations: 3000,
+			basePuzzle: [],
 		}
 	}
 	
@@ -34,6 +36,17 @@ class NPuzzle extends Component{
 		}
 		this.setState({iterations: iterations})
 	}
+
+	sendInputPuzzle(){
+		axios.get('/check_solvability', {
+			params: {
+				inputPuzzle: this.state.inputPuzzle
+			}
+		})
+		.then((response) => {
+			console.log(response);
+		})
+	}
 	
 	render(){
 		return(
@@ -46,12 +59,14 @@ class NPuzzle extends Component{
 							type="text"
 							name="puzzle"
 							className="puzzle-input"
+							onChange={(e) => this.setState({inputPuzzle: e.target.value})}
 						>
 						</input>
+						<button className="input-validation">Validate</button>
 						<div className="form-separator">Or</div>
 						<div className="form-caption section-title">Generate a random puzzle</div>
 						<div className="form-generator-container">
-							<div className="form-input-container">
+							<div className="input-container">
 								<div className="form-caption">Size between 3 and 8</div>
 								<input
 									className="size-input"
@@ -63,14 +78,14 @@ class NPuzzle extends Component{
 								>
 								</input>
 							</div>
-							<div className="form-input-container">
+							<div className="input-container">
 								<div className="form-caption">Solvable?</div>
 								<select className="solvable-input">
 									<option value={true}>Yes</option>
 									<option value={false}>No</option>
 								</select>
 							</div>
-							<div className="form-input-container">
+							<div className="input-container">
 								<div className="form-caption">Number of iteration between 0 and 10000</div>
 								<input
 									className="iterations-input"
