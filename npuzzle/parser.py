@@ -24,7 +24,7 @@ def check_type(p_type):
 def check_heuristic(p_arg):
 	if type(p_arg) != str:
 		return False
-	if p_arg not in HEURISITCS_LIST:
+	if p_arg not in HEURISTICS_LIST:
 		return False
 	return True
 
@@ -58,6 +58,8 @@ def check_npuzzle(p_arg):
 		return False
 	root = int(math.sqrt(len(p_arg)))
 	if root * root != len(p_arg):
+		return False
+	if 0 not in p_arg:
 		return False
 	return True
 

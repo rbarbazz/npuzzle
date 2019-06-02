@@ -142,6 +142,7 @@ class State:
 
 
 def astar(env, state_start):
+	gc.disable()
 	open_lst = PriorityQueue()
 	open_set = {}
 	close_set = {}
@@ -207,6 +208,7 @@ def astar(env, state_start):
 			curr_state = curr_state.parent
 		env.solution.reverse()
 
+	gc.enable()
 	return found
 
 
@@ -246,3 +248,21 @@ def solvable(puzzle, goal):
 def make_taquin(npuzzle_input):
 	return NPuzzle(npuzzle_input, int(math.sqrt(len(npuzzle_input))),
 		npuzzle_input.index(0))
+
+
+def solve(ntype, npuzzle, goal, greedy, heuristic):
+	npuzzle_start = NPuzzle(npuzzle, int(math.sqrt(len(npuzzle))),
+		npuzzle.index(0))
+	npuzzle_goal = NPuzzle(goal, int(math.sqrt(len(goal))), goal.index(0))
+
+	if heuristic not in globals():
+		return None
+	tmp_heuristic = globals()[heuristic]
+	env = Env(npuzzle_goal, tmp_heuristic, greedy, False)
+	State.env = env
+	state_start = State(npuzzle_start, NONE, None, 0)
+
+	found = astar(env, state_start)
+	list_moves = [state.action for state in env.solution]
+	result = {"solution": list_moves, "stats": env.stats, "found": found}
+	return result

@@ -19,8 +19,20 @@ def main():
 	parser.sanitize_arguments()
 
 	r = api.make_random("snale", 3, True)
+	if r["error"]:
+		print(r["data"])
+		return 0
 	print(r)
-	print(api.check_solvability(r["type"], r["npuzzle"]))
+	r = api.check_solvability(r["type"], r["npuzzle"])
+	if r["error"]:
+		print(r["data"])
+		return 0
+	print(r)
+	r = api.solve(r["type"], r["npuzzle"], False, "manhattan")
+	if r["error"]:
+		print(r["data"])
+		return 0
+	print(r)
 	return 0
 
 
