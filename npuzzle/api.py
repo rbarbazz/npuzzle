@@ -42,7 +42,8 @@ def check_solvability(ntype, npuzzle_input):
 	ret["npuzzle"] = npuzzle_input
 	tmp = make_taquin(npuzzle_input)
 	ret["size"] = tmp.size
-	ret["solvable"] = solvable(tmp, make_taquin(make_goal(tmp.size)))
+	ret["goal"] = make_goal(tmp.size)
+	ret["solvable"] = solvable(tmp, make_taquin(ret["goal"]))
 	return ret
 
 
@@ -59,12 +60,12 @@ def solve(ntype, npuzzle_input, greedy, heuristic):
 
 	ret["type"] = ntype
 	ret["npuzzle"] = npuzzle_input
+	ret["goal"] = make_goal(tmp.size)
 	ret["greedy"] = greedy
 	ret["heuristic"] = heuristic
 	tmp = make_taquin(npuzzle_input)
 	ret["size"] = tmp.size
-	ret["solvable"] = solvable(tmp,
-		make_taquin(make_goal(tmp.size)))
+	ret["solvable"] = solvable(tmp, make_taquin(ret["goal"]))
 	if ret["solvable"]:
 		ret["solution"] = []
 		ret["stats"] = {}
