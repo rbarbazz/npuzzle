@@ -2,11 +2,12 @@ import React, { Component} from "react"
 import axios from "axios"
 import "./NPuzzle.css"
 
+
 class Visu extends Component{
 	constructor(props) {
 		super(props)
 		this.state = {
-			basePuzzle: this.props.basePuzzle,
+			currNPuzzle: this.props.baseNPuzzle,
 			size: this.props.size
 		}
 	}
@@ -16,7 +17,7 @@ class Visu extends Component{
 		return(
 			<React.Fragment>
 				<div className="puzzle-container">
-					{this.state.basePuzzle.map((e, index) => {
+					{this.state.currNPuzzle.map((e, index) => {
 						return (<div
 									key={'puzzle-case_' + index}
 									className="puzzle-case"
@@ -29,7 +30,7 @@ class Visu extends Component{
 						</div>)
 					})}
 				</div>
-				<button className="solve-button">Solve</button>
+				<button className="solve-button" onClick={() => this.props.solvePuzzle(this.state.currNPuzzle)}>Solve</button>
 			</React.Fragment>
 		)
 	}
@@ -133,10 +134,27 @@ class NPuzzle extends Component{
 		this.state = {
 			size: 3,
 			stepNumber: 0,
-			basePuzzle: []
+			baseNPuzzle: []
 		}
 		this.sendInputPuzzle = this.sendInputPuzzle.bind(this)
 		this.sendGenParams = this.sendGenParams.bind(this)
+		this.solvePuzzle = this.solvePuzzle.bind(this)
+	}
+
+
+	solvePuzzle(baseNPuzzle){
+		axios.get('/solve', {
+			params: {
+				baseNPuzzle: baseNPuzzle.join(' ')
+			}
+		})
+		.then((response) => {
+			console.log(response)
+			if (response.data.error == true) {
+				alert("Error: " + response.data.data)
+			} else {
+			}
+		})
 	}
 
 
@@ -152,7 +170,7 @@ class NPuzzle extends Component{
 			} else {
 				this.setState({
 					stepNumber: 1,
-					basePuzzle: response.data.npuzzle,
+					baseNPuzzle: response.data.npuzzle,
 					size: response.data.size
 				})
 			}
@@ -169,13 +187,12 @@ class NPuzzle extends Component{
 			}
 		})
 		.then((response) => {
-			console.log(response)
 			if (response.data.error == true) {
 				alert("Error: " + response.data.data)
 			} else {
 				this.setState({
 					stepNumber: 1,
-					basePuzzle: response.data.npuzzle,
+					baseNPuzzle: response.data.npuzzle,
 					size: response.data.size
 				})
 			}
@@ -195,8 +212,9 @@ class NPuzzle extends Component{
 				}
 				{this.state.stepNumber == 1 &&
 					<Visu
-						basePuzzle={this.state.basePuzzle}
+						baseNPuzzle={this.state.baseNPuzzle}
 						size={this.state.size}
+						solvePuzzle={this.solvePuzzle}
 					/>
 				}
 			</div>

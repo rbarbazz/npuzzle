@@ -26,5 +26,13 @@ def make_random():
     dataJson = api.make_random('snale', int(size), bool(isSolvable), int(iterations))
     return jsonify(dataJson)
 
+
+@app.route('/solve')
+def solve():
+    baseNPuzzle = request.args.get('baseNPuzzle')
+    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), False, 'manhattan')
+    return jsonify(dataJson)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
