@@ -38,10 +38,11 @@ def check_solvability(ntype, npuzzle_input):
 		return {"error": True, "data": "Bad input"}
 	ret = {"error": False}
 
-	ret["npuzzle"] = npuzzle_input
-	ret["solvable"] = solvable(make_taquin(npuzzle_input),
-		make_taquin(make_goal(len(npuzzle_input))))
 	ret["type"] = ntype
+	ret["npuzzle"] = npuzzle_input
+	tmp = make_taquin(npuzzle_input)
+	ret["size"] = tmp.size
+	ret["solvable"] = solvable(tmp, make_taquin(make_goal(tmp.size)))
 	return ret
 
 
@@ -56,13 +57,17 @@ def solve(ntype, npuzzle_input, greedy, heuristic):
 		return {"error": True, "data": "Bad heuristic"}
 	ret = {"error": False}
 
+	ret["type"] = ntype
 	ret["npuzzle"] = npuzzle_input
 	ret["greedy"] = greedy
 	ret["heuristic"] = heuristic
-	ret["solvable"] = solvable(make_taquin(npuzzle_input),
-		make_taquin(make_goal(len(npuzzle_input))))
-	ret["solution"] = []
-	ret["type"] = ntype
+	tmp = make_taquin(npuzzle_input)
+	ret["size"] = tmp.size
+	ret["solvable"] = solvable(tmp,
+		make_taquin(make_goal(tmp.size)))
+	if ret["solvable"]:
+		ret["solution"] = []
+		ret["stats"] = {}
 	return ret
 
 
