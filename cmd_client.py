@@ -17,6 +17,10 @@ def signal_handler(sig, frame):
 def main():
 	signal.signal(signal.SIGINT, signal_handler)
 	parser.sanitize_arguments()
+
+	r = api.make_random("snale", 3, True)
+	print(r)
+	print(api.check_solvability(r["type"], r["npuzzle"]))
 	return 0
 
 

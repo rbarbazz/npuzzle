@@ -7,10 +7,60 @@ import argparse
 import sys
 import re
 import math
-from .heuristic import get_available_heuristics
+from .heuristic import HEURISTICS_LIST
 
 VALID_ACTIONS = ["gen", "import", "solve"]
 VALID_TYPES = ["snale", "linear"]
+
+
+def check_type(p_type):
+	if type(p_type) != str:
+		return False
+	if p_type not in VALID_TYPES:
+		return False
+	return True
+
+
+def check_heuristic(p_arg):
+	if type(p_arg) != str:
+		return False
+	if p_arg not in HEURISITCS_LIST:
+		return False
+	return True
+
+
+def check_int(p_size, p_min, p_max):
+	if type(p_size) != int:
+		return False
+	if p_size < p_min or p_size > p_max:
+		return False
+	return True
+
+
+def check_bool(p_arg):
+	return type(p_arg) == bool
+
+
+def check_str(p_arg):
+	if type(p_arg) != str:
+		return False
+	if len(p_arg) < 1:
+		return False
+	return True
+
+
+def check_npuzzle(p_arg):
+	if type(p_arg) != list:
+		return False
+	if len(p_arg) < 9:
+		return False
+	if type(p_arg[0]) != int:
+		return False
+	root = int(math.sqrt(len(p_arg)))
+	if root * root != len(p_arg):
+		return False
+	return True
+
 
 def sanitize_arguments():
 	parser = argparse.ArgumentParser(description='NPuzzle solver')
