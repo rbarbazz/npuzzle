@@ -3,6 +3,13 @@ import axios from "axios"
 import "./NPuzzle.css"
 
 
+Array.prototype.move = function(from,to){
+	this.splice(to,0,this.splice(from,1)[0]);
+	return this;
+}  
+  
+
+
 class Visu extends Component{
 	constructor(props) {
 		super(props)
@@ -10,6 +17,43 @@ class Visu extends Component{
 			currNPuzzle: this.props.baseNPuzzle,
 			size: this.props.size
 		}
+		this.solvePuzzle = this.solvePuzzle.bind(this)
+	}
+
+
+	makeMove(move){
+		let nextMove = this.state.currNPuzzle
+		let zeroPos = nextMove.indexOf(0)
+
+		if (move == 0) {
+			nextMove.move(zeroPos, zeroPos + this.state.size)
+		} else if (move == 1) {
+			nextMove.move(zeroPos, zeroPos - this.state.size)
+		} else if (move == 2) {
+			nextMove.move(zeroPos, zeroPos - 1)
+		} else {
+			nextMove.move(zeroPos, zeroPos + 1)
+		}
+
+		this.setState({currNPuzzle: nextMove})
+	}
+
+
+	solvePuzzle(){
+		axios.get('/solve', {
+			params: {
+				baseNPuzzle: this.state.currNPuzzle.join(' ')
+			}
+		})
+		.then((response) => {
+			if (response.data.error == true || response.data.solvable != true) {
+				alert("Error: Not solvable")
+			} else {
+				response.data.solution.forEach(e => {
+					this.makeMove(e)
+				})
+			}
+		})
 	}
 
 
@@ -30,7 +74,12 @@ class Visu extends Component{
 						</div>)
 					})}
 				</div>
-				<button className="solve-button" onClick={() => this.props.solvePuzzle(this.state.currNPuzzle)}>Solve</button>
+				<button
+					className="solve-button"
+					onClick={this.solvePuzzle}
+				>
+					Solve
+				</button>
 			</React.Fragment>
 		)
 	}
@@ -102,7 +151,11 @@ class InputForm extends Component{
 					</div>
 					<div className="input-container">
 						<div className="form-caption">Solvable?</div>
-						<select className="solvable-input" onChange={(e) => this.setState({isSolvable: e.target.value})}>
+						<select
+							className="solvable-input"
+							onChange={(e) => this.setState({isSolvable: e.target.value})}
+							value={this.state.isSolvable}
+						>
 							<option value={true}>Yes</option>
 							<option value={false}>No</option>
 						</select>
@@ -138,23 +191,6 @@ class NPuzzle extends Component{
 		}
 		this.sendInputPuzzle = this.sendInputPuzzle.bind(this)
 		this.sendGenParams = this.sendGenParams.bind(this)
-		this.solvePuzzle = this.solvePuzzle.bind(this)
-	}
-
-
-	solvePuzzle(baseNPuzzle){
-		axios.get('/solve', {
-			params: {
-				baseNPuzzle: baseNPuzzle.join(' ')
-			}
-		})
-		.then((response) => {
-			console.log(response)
-			if (response.data.error == true) {
-				alert("Error: " + response.data.data)
-			} else {
-			}
-		})
 	}
 
 
@@ -187,6 +223,7 @@ class NPuzzle extends Component{
 			}
 		})
 		.then((response) => {
+			console.log(response.data)
 			if (response.data.error == true) {
 				alert("Error: " + response.data.data)
 			} else {
@@ -210,11 +247,10 @@ class NPuzzle extends Component{
 						sendGenParams={this.sendGenParams}
 					/>
 				}
-				{this.state.stepNumber == 1 &&
+				{this.state.stepNumber > 0 &&
 					<Visu
 						baseNPuzzle={this.state.baseNPuzzle}
 						size={this.state.size}
-						solvePuzzle={this.solvePuzzle}
 					/>
 				}
 			</div>
