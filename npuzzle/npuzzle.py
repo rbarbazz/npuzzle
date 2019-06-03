@@ -12,9 +12,8 @@ from .heuristic import *
 from .env import Env, get_mem_usage
 
 
-CONTINUE = False
-
-
+TYPES_LIST = ["snale", "linear"]
+RUNNING = False
 
 """
 Possible actions
@@ -95,33 +94,33 @@ Djisktra: weight = cost
 class State:
 	env = None
 
-	def __init__(self, taquin, action, parent, cost):
+	def __init__(self, taquin, action, parent, cost, env):
 		self.action = action	# Action performs from last state
 		self.parent = parent	# Ref to previous state
 		self.cost = cost		# +1 each step
 		# Current npuzzle
 		self.taquin = NPuzzle(taquin.board, taquin.size, taquin.pos)
 		self.taquin.move(action)
-		self.heuristic = State.env.heuristic(State.env, self.taquin)
+		self.heuristic = env.heuristic(env, self.taquin)
 		# Cache
-		self.weight = self.heuristic + (0 if State.env.greedy else self.cost)
+		self.weight = self.heuristic + (0 if env.greedy else self.cost)
 		self.board = self.taquin.board
 		self._hash = hash(str(self.board))
 
-	def find_moves(self):
+	def find_moves(self, env):
 		action = self.action
 		cost = self.cost + 1
 		taquin = self.taquin
 		moves = []
 		app = moves.append
 		if taquin.y > 0 and action != DOWN:
-			 app(State(taquin, UP, self, cost))
+			 app(State(taquin, UP, self, cost, env))
 		if taquin.y < taquin.size - 1 and action != UP:
-			app(State(taquin, DOWN, self, cost))
+			app(State(taquin, DOWN, self, cost, env))
 		if taquin.x < taquin.size - 1 and action != WEST:
-			app(State(taquin, EAST, self, cost))
+			app(State(taquin, EAST, self, cost, env))
 		if taquin.x > 0 and action != EAST:
-			app(State(taquin, WEST, self, cost))
+			app(State(taquin, WEST, self, cost, env))
 		return moves
 
 	# Pour le dict: hash = chaine du board en int
@@ -142,6 +141,7 @@ class State:
 
 
 def astar(env, state_start):
+	global RUNNING
 	gc.disable()
 	open_lst = PriorityQueue()
 	open_set = {}
@@ -151,7 +151,7 @@ def astar(env, state_start):
 	found = False
 	curr_state = None
 	env.up_mem()
-	while (len(open_lst) > 0):
+	while (len(open_lst) > 0 and RUNNING):
 		while True:
 			try:
 				curr_state = open_lst.pop()
@@ -167,11 +167,11 @@ def astar(env, state_start):
 		if curr_state is None:
 			break
 
-		if curr_state == State.env.goal:
+		if curr_state == env.goal:
 			found = True
 			break
 
-		for next_state in curr_state.find_moves():
+		for next_state in curr_state.find_moves(env):
 			if next_state in close_set:
 				continue
 			elif next_state in open_set:
@@ -212,57 +212,29 @@ def astar(env, state_start):
 	return found
 
 
-def count_inversion(base, goal):
-	tt_inv = 0
-	for i in range(0, len(base.board) - 1):
-		if base.board[i] == 0:
-			continue
-		for j in range(i + 1, len(base.board)):
-			if base.board[j] == 0:
-				continue
-			if goal.board.index(base.board[j]) < goal.board.index(base.board[i]):
-				tt_inv += 1
-	return tt_inv
-
-
-"""
-If multiple of 4 -> return even if y % 2 else not even
-else if multiple of 2-> return not even if y % 2 else even
-else if odd -> return even
-"""
-def solvable(puzzle, goal):
-	even = count_inversion(puzzle, goal) % 2 == 0
-	if puzzle.size % 4 == 0:
-		if puzzle.y % 2 == 0:
-			return even
-		else:
-			return not even
-	elif puzzle.size % 2 == 0:
-		if puzzle.y % 2 == 0:
-			return not even
-		else:
-			return even
-	return even
-
-
 def make_taquin(npuzzle_input):
 	return NPuzzle(npuzzle_input, int(math.sqrt(len(npuzzle_input))),
 		npuzzle_input.index(0))
 
 
-def solve(ntype, npuzzle, goal, greedy, heuristic):
+def solve(npuzzle, goal, greedy, heuristic):
+	global RUNNING
+	RUNNING = True
 	npuzzle_start = NPuzzle(npuzzle, int(math.sqrt(len(npuzzle))),
 		npuzzle.index(0))
 	npuzzle_goal = NPuzzle(goal, int(math.sqrt(len(goal))), goal.index(0))
-
 	if heuristic not in globals():
+		RUNNING = False
 		return None
 	tmp_heuristic = globals()[heuristic]
+
 	env = Env(npuzzle_goal, tmp_heuristic, greedy, False)
-	State.env = env
-	state_start = State(npuzzle_start, NONE, None, 0)
+	state_start = State(npuzzle_start, NONE, None, 0, env)
+
 
 	found = astar(env, state_start)
+
 	list_moves = [state.action for state in env.solution]
 	result = {"solution": list_moves, "stats": env.stats, "found": found}
+	RUNNING = False
 	return result
