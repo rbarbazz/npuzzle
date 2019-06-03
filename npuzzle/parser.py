@@ -8,15 +8,17 @@ import sys
 import re
 import math
 from .heuristic import HEURISTICS_LIST
+from .npuzzle import TYPES_LIST
+from functools import reduce
+
 
 VALID_ACTIONS = ["gen", "import", "solve"]
-VALID_TYPES = ["snale", "linear"]
 
 
 def check_type(p_type):
 	if type(p_type) != str:
 		return False
-	if p_type not in VALID_TYPES:
+	if p_type not in TYPES_LIST:
 		return False
 	return True
 
@@ -52,14 +54,16 @@ def check_str(p_arg):
 def check_npuzzle(p_arg):
 	if type(p_arg) != list:
 		return False
-	if len(p_arg) < 9:
+	if len(p_arg) < 4:
 		return False
 	if type(p_arg[0]) != int:
 		return False
 	root = int(math.sqrt(len(p_arg)))
 	if root * root != len(p_arg):
 		return False
-	if 0 not in p_arg:
+	# Check if all digit from 0 to len(puzzle) are present
+	check_nb = [(x in p_arg) for x in range(0, len(p_arg))]
+	if not reduce(lambda a, b: a and b, check_nb):
 		return False
 	return True
 
@@ -81,7 +85,7 @@ def sanitize_arguments():
 		help="No output")
 	# Type of npuzzle
 	parser.add_argument("-t", "--type", type=str,
-		help="Type of npuzzle: {}".format(", ".join(VALID_TYPES)))
+		help="Type of npuzzle: {}".format(", ".join(TYPES_LIST)))
 
 	# Arguments
 	parsers["gen"].add_argument("-u", "--unsolvable", action="store_true",
