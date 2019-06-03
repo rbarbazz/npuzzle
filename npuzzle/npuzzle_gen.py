@@ -13,9 +13,9 @@ def make_puzzle(s, solvable, iterations):
 			poss.append(idx - 1)
 		if idx % s < s - 1:
 			poss.append(idx + 1)
-		if idx / s > 0:
+		if idx // s > 0:
 			poss.append(idx - s)
-		if idx / s < s - 1:
+		if idx // s < s - 1:
 			poss.append(idx + s)
 		swi = random.choice(poss)
 		p[idx] = p[swi]
