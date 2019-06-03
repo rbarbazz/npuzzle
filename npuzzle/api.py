@@ -109,7 +109,7 @@ def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback):
 	ret["solvable"] = gen.solvable(ret["type"], tmp,
 		npuzzle.make_taquin(ret["goal"]))
 	if ret["solvable"] or True:
-		signal.signal(signal.SIGINT, signal_handler)
+		# signal.signal(signal.SIGINT, signal_handler)
 		CURRENT_PROCESS = Process(ret, callback)
 		CURRENT_PROCESS.start()
 	return ret

@@ -15,7 +15,9 @@ class Visu extends Component{
 		super(props)
 		this.state = {
 			currNPuzzle: this.props.baseNPuzzle,
-			size: this.props.size
+			size: this.props.size,
+			heuristic: 'manhattan',
+			greedy: false
 		}
 		this.solvePuzzle = this.solvePuzzle.bind(this)
 	}
@@ -42,10 +44,13 @@ class Visu extends Component{
 	solvePuzzle(){
 		axios.get('/solve', {
 			params: {
-				baseNPuzzle: this.state.currNPuzzle.join(' ')
+				baseNPuzzle: this.state.currNPuzzle.join(' '),
+				greedy: this.state.greedy,
+				heuristic: this.state.heuristic
 			}
 		})
 		.then((response) => {
+			console.log(response)
 			if (response.data.error == true || response.data.solvable != true) {
 				alert("Error: Not solvable")
 			} else {
@@ -73,6 +78,32 @@ class Visu extends Component{
 							<div className="case-number">{e != 0 ? e : ''}</div>
 						</div>)
 					})}
+				</div>
+				<div className="input-container">
+					<div className="form-caption">Greedy?</div>
+					<select
+						className="solvable-input"
+						onChange={(e) => this.setState({greedy: e.target.value})}
+						value={this.state.greedy}
+					>
+						<option value={true}>Yes</option>
+						<option value={false}>No</option>
+					</select>
+				</div>
+				<div className="input-container">
+					<div className="form-caption">Choose a heuristic</div>
+					<select
+						className="solvable-input heuristic-input"
+						onChange={(e) => this.setState({heuristic: e.target.value})}
+						value={this.state.heuristic}
+					>
+						<option value="uniform">Uniform</option>
+						<option value="manhattan">Manhattan</option>
+						<option value="euclidian">Euclidian</option>
+						<option value="linear_conflicts">Linear Conflicts</option>
+						<option value="hamming_good">Hamming Good</option>
+						<option value="hamming_bad">Hamming Bad</option>
+					</select>
 				</div>
 				<button
 					className="solve-button"
@@ -223,7 +254,6 @@ class NPuzzle extends Component{
 			}
 		})
 		.then((response) => {
-			console.log(response.data)
 			if (response.data.error == true) {
 				alert("Error: " + response.data.data)
 			} else {

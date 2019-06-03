@@ -2,8 +2,17 @@ from flask import Flask, render_template, request, jsonify
 from npuzzle import api
 import os
 
+app = Flask(
+        __name__,
+        root_path='webapp',
+        template_folder='public',
+        static_folder=os.path.abspath('webapp/static')
+        )
 
-app = Flask(__name__, root_path='webapp', template_folder='public', static_folder=os.path.abspath('webapp/static'))
+wait = False
+
+def callback(data):
+    pass
 
 
 @app.route('/')
@@ -30,7 +39,9 @@ def make_random():
 @app.route('/solve')
 def solve():
     baseNPuzzle = request.args.get('baseNPuzzle')
-    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), False, 'manhattan')
+    greedy = request.args.get('greedy')
+    heuristic = request.args.get('heuristic')
+    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), bool(greedy), heuristic, callback)
     return jsonify(dataJson)
 
 
