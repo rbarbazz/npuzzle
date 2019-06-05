@@ -40,6 +40,7 @@ def make_random():
 def solve():
     baseNPuzzle = request.args.get('baseNPuzzle')
     greedy = request.args.get('greedy')
+    greedy = True if greedy == "true" else False
     heuristic = request.args.get('heuristic')
     dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), bool(greedy), heuristic, callback)
     return jsonify(dataJson)
