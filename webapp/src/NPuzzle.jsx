@@ -17,27 +17,35 @@ class Visu extends Component{
 			currNPuzzle: this.props.baseNPuzzle,
 			size: this.props.size,
 			heuristic: 'manhattan',
-			greedy: false
+			greedy: false,
+			goal: []
 		}
 		this.solvePuzzle = this.solvePuzzle.bind(this)
+		var solution = []
 	}
 
 
 	makeMove(move){
 		let nextMove = this.state.currNPuzzle
 		let zeroPos = nextMove.indexOf(0)
-
-		if (move == 0) {
-			nextMove.move(zeroPos, zeroPos + this.state.size)
-		} else if (move == 1) {
-			nextMove.move(zeroPos, zeroPos - this.state.size)
-		} else if (move == 2) {
-			nextMove.move(zeroPos, zeroPos - 1)
-		} else {
-			nextMove.move(zeroPos, zeroPos + 1)
+		if (this.solution.length === 0) {
+			this.setState({currNPuzzle: this.state.goal})
+			return
 		}
-
-		this.setState({currNPuzzle: nextMove})
+		
+		if (move == 0) {
+			[nextMove[zeroPos], nextMove[zeroPos - this.state.size]] = [nextMove[zeroPos - this.state.size], nextMove[zeroPos]];
+		} else if (move == 1) {
+			[nextMove[zeroPos], nextMove[zeroPos + this.state.size]] = [nextMove[zeroPos + this.state.size], nextMove[zeroPos]];
+		} else if (move == 2) {
+			[nextMove[zeroPos], nextMove[zeroPos + 1]] = [nextMove[zeroPos + 1], nextMove[zeroPos]];
+		} else {
+			[nextMove[zeroPos], nextMove[zeroPos - 1]] = [nextMove[zeroPos - 1], nextMove[zeroPos]];
+		}
+		
+		this.setState({currNPuzzle: nextMove}, () => {
+			setTimeout(() => this.makeMove(this.solution.shift()), 100)
+		})
 	}
 
 
@@ -54,9 +62,8 @@ class Visu extends Component{
 			if (response.data.error == true || response.data.solvable != true) {
 				alert("Error: Not solvable")
 			} else {
-				response.data.solution.forEach(e => {
-					this.makeMove(e)
-				})
+				this.solution = response.data.solution
+				this.setState({goal: response.data.goal}, this.makeMove(this.solution.shift()))	
 			}
 		})
 	}

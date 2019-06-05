@@ -112,6 +112,7 @@ def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback):
 		# signal.signal(signal.SIGINT, signal_handler)
 		CURRENT_PROCESS = Process(ret, callback)
 		CURRENT_PROCESS.start()
+		CURRENT_PROCESS.join()
 	return ret
 
 
@@ -140,7 +141,7 @@ class Process(threading.Thread):
 			self.data["stats"] = result["stats"]
 			self.data["found"] = result["found"]
 		self.data["running"] = False
-		self.callback(self.data)
+		# self.callback(self.data)
 
 	def stop_running(self):
 		npuzzle.RUNNING = False
