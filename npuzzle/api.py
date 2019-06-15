@@ -47,8 +47,8 @@ def make_random(ntype, size, is_solvable=True, iterations=5000):
 	if not parser.check_type(ntype):
 		return {"error": True, "data": "Wrong type [{}]".format(
 			", ".join(npuzzle.TYPES_LIST))}
-	if not parser.check_int(size, 2, 1024):
-		return {"error": True, "data": "Bad size [2-1024]"}
+	if not parser.check_int(size, 2, 64):
+		return {"error": True, "data": "Bad size [2-64]"}
 	if not parser.check_int(iterations, 0, 1000000000):
 		return {"error": True, "data": "Bad iterations [0-1000000000]"}
 	if not parser.check_bool(is_solvable):

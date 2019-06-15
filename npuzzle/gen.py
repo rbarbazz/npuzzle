@@ -10,7 +10,7 @@ __all__ = ["gen_goal", "gen_random", "solvable"]
 
 
 def gen_snale(size, length):
-	goal = [-1] * (size *size)
+	goal = [-1] * (size * size)
 	tile = {"v": 1}
 	i = 0
 

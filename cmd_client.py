@@ -84,6 +84,8 @@ def process_gen(args, data):
 	if args.output:
 		print(data["size"])
 	print(taquin)
+	if not args.output:
+		print("Copy/Paste it: {}".format(data["npuzzle"]))
 
 
 def process_check(args, data):
@@ -112,7 +114,6 @@ def main():
 		puzzle = get_puzzle_from_string(args.raw)
 	else:
 		puzzle = None
-
 	# Dispatch actions
 	if args.which == "gen":
 		r = api.make_random(args.type, args.size, not args.unsolvable,
