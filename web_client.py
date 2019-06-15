@@ -9,11 +9,6 @@ app = Flask(
         static_folder=os.path.abspath('webapp/static')
         )
 
-wait = False
-
-def callback(data):
-    pass
-
 
 @app.route('/')
 def npuzzle_web():
@@ -42,8 +37,17 @@ def solve():
     greedy = request.args.get('greedy')
     greedy = True if greedy == "true" else False
     heuristic = request.args.get('heuristic')
-    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), bool(greedy), heuristic, callback)
+    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), greedy, heuristic, None)
     return jsonify(dataJson)
+
+
+@app.route('/stop-solving')
+def stop_solving():
+    if api.stop_solving():
+        return 'Success'
+    else:
+        return 'Failure'
+
 
 
 if __name__ == "__main__":
