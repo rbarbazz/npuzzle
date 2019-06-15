@@ -8,7 +8,7 @@ Array.prototype.move = function(from,to){
 	this.splice(to,0,this.splice(from,1)[0]);
 	return this;
 }  
-  
+
 
 class Visu extends Component{
 	constructor(props) {
@@ -19,9 +19,12 @@ class Visu extends Component{
 			heuristic: 'manhattan',
 			greedy: false,
 			goal: [],
-			is_solving: false,
-			is_solvable: true,
-			is_moving: false
+			stats: {},
+			isSolving: false,
+			isSolvable: true,
+			isMoving: false,
+			currMove: 0,
+			totalMoves: 0
 		}
 		this.solvePuzzle = this.solvePuzzle.bind(this)
 		this.stopSolving = this.stopSolving.bind(this)
@@ -36,7 +39,7 @@ class Visu extends Component{
 		.then((response) => {
 			console.log(response)
 			if (response.data == 'Success') {
-				this.setState({is_solving: false})
+				this.setState({isSolving: false})
 			}
 		})
 	}
@@ -47,13 +50,13 @@ class Visu extends Component{
 		if (this.solution.length > 50) {
 			movingSpeed = 40
 		}
-		console.log(movingSpeed)
 		let nextMove = this.state.currNPuzzle
 		let zeroPos = nextMove.indexOf(0)
 		if (this.solution.length === 0) {
 			this.setState({
 				currNPuzzle: this.state.goal,
-				is_moving: false
+				isMoving: false,
+				currMove: this.state.totalMoves
 			})
 			return
 		}
@@ -68,14 +71,17 @@ class Visu extends Component{
 			[nextMove[zeroPos], nextMove[zeroPos - 1]] = [nextMove[zeroPos - 1], nextMove[zeroPos]];
 		}
 		
-		this.setState({currNPuzzle: nextMove}, () => {
+		this.setState(prevState => ({
+			currNPuzzle: nextMove,
+			currMove: prevState.currMove + 1
+		}), () => {
 			setTimeout(() => this.makeMove(this.solution.shift()), movingSpeed)
 		})
 	}
 
 
 	solvePuzzle(){
-		this.setState({is_solving: true})
+		this.setState({isSolving: true})
 		axios.get('/solve', {
 			params: {
 				baseNPuzzle: this.state.currNPuzzle.join(' '),
@@ -85,14 +91,19 @@ class Visu extends Component{
 		})
 		.then((response) => {
 			console.log(response)
-			this.setState({is_solving: false})
+			this.setState({isSolving: false})
 			if (response.data.error == true || response.data.solvable == false) {
-				this.setState({is_solvable: false})
+				this.setState({
+					isSolvable: false,
+					stats: response.data.stats
+				})
 			} else if (response.data.found == true) {
 				this.solution = response.data.solution
 				this.setState({
+					stats: response.data.stats,
 					goal: response.data.goal,
-					is_moving: true
+					isMoving: true,
+					totalMoves: this.solution.length
 				}, this.makeMove(this.solution.shift()))	
 			}
 		})
@@ -116,7 +127,7 @@ class Visu extends Component{
 						</div>)
 					})}
 				</div>
-				{!this.state.is_solving && this.state.is_solvable && this.state.currNPuzzle != this.state.goal && !this.state.is_moving &&
+				{!this.state.isSolving && this.state.isSolvable && this.state.currNPuzzle != this.state.goal && !this.state.isMoving &&
 					<React.Fragment> 
 						<div className="input-container">
 							<div className="form-caption">Greedy?</div>
@@ -152,7 +163,7 @@ class Visu extends Component{
 						</button>
 					</React.Fragment>
 				}
-				{this.state.is_solving &&
+				{this.state.isSolving &&
 					<div className="loading-container">
 						<CircularProgress />
 						<div className="loading-text">Looking for solution...</div>
@@ -164,10 +175,22 @@ class Visu extends Component{
 						</button>
 					</div>
 				}
-				{!this.state.is_solvable &&
+				{!this.state.isSolvable &&
 					<div className="unsolvable-text">This NPuzzle is unsolvable !</div>
 				}
-				{!this.state.is_solving && !this.state.is_moving &&
+				{(this.state.isMoving || this.state.currNPuzzle == this.state.goal || !this.state.isSolvable) &&
+					<React.Fragment> 
+						<div className="moves-text">Current move: {this.state.currMove} / {this.state.totalMoves}</div>
+						<div className="stats-container">
+							<div className="stats-text">Memory used: <div className="stat-value">{this.state.stats.memory} Mo</div></div>
+							<div className="stats-text">Nodes created: <div className="stat-value">{this.state.stats.nodes_created}</div></div>
+							<div className="stats-text">Memory complexity: <div className="stat-value">{this.state.stats.nodes_stocked}</div></div>
+							<div className="stats-text">Time in seconds: <div className="stat-value">{this.state.stats.time / 1000000}</div></div>
+							<div className="stats-text">Time complexity: <div className="stat-value">{this.state.stats.turns}</div></div>
+						</div>
+					</React.Fragment>
+				}
+				{!this.state.isSolving && !this.state.isMoving &&
 					<button
 						className="generic-button"
 						onClick={this.props.resetStep}

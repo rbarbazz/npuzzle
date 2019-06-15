@@ -26,8 +26,9 @@ def check_solvability():
 def make_random():
     size = request.args.get('size')
     isSolvable = request.args.get('isSolvable')
+    isSolvable = True if isSolvable == "true" else False
     iterations = request.args.get('iterations')
-    dataJson = api.make_random('snale', int(size), bool(isSolvable), int(iterations))
+    dataJson = api.make_random('snale', int(size), isSolvable, int(iterations))
     return jsonify(dataJson)
 
 
