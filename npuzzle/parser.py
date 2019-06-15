@@ -93,7 +93,7 @@ def sanitize_arguments():
 
 	# Arguments gen
 	parsers["gen"].add_argument("-u", "--unsolvable", action="store_true",
-		help="The npuzzle generated must be unsolvable", default=True)
+		help="The npuzzle generated must be unsolvable", default=False)
 	parsers["gen"].add_argument("-s", "--size", type=int,
 		help="The dimension of the npuzzle (> 1)", required=True)
 	parsers["gen"].add_argument("-i", "--iteration", type=int, default=5000,

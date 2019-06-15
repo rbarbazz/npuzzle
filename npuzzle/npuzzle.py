@@ -7,7 +7,7 @@ import signal
 import gc
 import math
 import heapq
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .heuristic import *
 from .env import Env, get_mem_usage
@@ -234,8 +234,8 @@ def solve(npuzzle, goal, greedy, heuristic):
 
 	start_time = datetime.now()
 	found = astar(env, state_start)
-	env.stats["time"] = datetime.now().microsecond - start_time.microsecond
-
+	exec_time = datetime.now() - start_time
+	env.stats["time"] = int(exec_time / timedelta(microseconds=1))
 	list_moves = [state.action for state in env.solution]
 	result = {"solution": list_moves, "stats": env.stats, "found": found}
 	RUNNING = False

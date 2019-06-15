@@ -59,15 +59,14 @@ def main():
 	args = parser.sanitize_arguments()
 
 	# Get puzzle in list format
-	if args.file is not None:
+	if "file" in args and args.file is not None:
 		puzzle = get_puzzle_from_file(args.file)
-	elif args.raw is not None:
+	elif "raw" in args and args.raw is not None:
 		puzzle = get_puzzle_from_string(args.raw)
 	else:
 		puzzle = None
 
 	# Dispatch actions
-	r = None
 	if args.which == "gen":
 		r = api.make_random(args.type, args.size, not args.unsolvable,
 			args.iteration)
