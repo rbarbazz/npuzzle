@@ -136,7 +136,7 @@ def linear_conflicts(env, npuzzle):
 	# Col
 	lc += _get_lc(env, cost, board, size, (1, 0), size)
 	# 2 * lc + manh
-	return lc + lc + heuristic_manhattan(env, npuzzle)
+	return lc + lc + manhattan(env, npuzzle)
 
 
 if __name__ == '__main__':

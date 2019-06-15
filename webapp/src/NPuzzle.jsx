@@ -14,7 +14,7 @@ class Visu extends Component{
 	constructor(props) {
 		super(props)
 		this.state = {
-			currNPuzzle: this.props.baseNPuzzle,
+			currNPuzzle: [...this.props.baseNPuzzle],
 			size: this.props.size,
 			heuristic: 'manhattan',
 			greedy: false,
@@ -26,9 +26,27 @@ class Visu extends Component{
 			currMove: 0,
 			totalMoves: 0
 		}
+		var solution = []
 		this.solvePuzzle = this.solvePuzzle.bind(this)
 		this.stopSolving = this.stopSolving.bind(this)
-		var solution = []
+		this.resetPuzzle = this.resetPuzzle.bind(this)
+	}
+
+
+	resetPuzzle(){
+		this.setState({
+			currNPuzzle: [...this.props.baseNPuzzle],
+			size: this.props.size,
+			heuristic: 'manhattan',
+			greedy: false,
+			goal: [],
+			stats: {},
+			isSolving: false,
+			isSolvable: true,
+			isMoving: false,
+			currMove: 0,
+			totalMoves: 0
+		})
 	}
 
 
@@ -84,7 +102,7 @@ class Visu extends Component{
 		this.setState({isSolving: true})
 		axios.get('/solve', {
 			params: {
-				baseNPuzzle: this.state.currNPuzzle.join(' '),
+				baseNPuzzle: this.props.baseNPuzzle.join(' '),
 				greedy: this.state.greedy,
 				heuristic: this.state.heuristic
 			}
@@ -179,15 +197,25 @@ class Visu extends Component{
 					<div className="unsolvable-text">This NPuzzle is unsolvable !</div>
 				}
 				{(this.state.isMoving || this.state.currNPuzzle == this.state.goal || !this.state.isSolvable) &&
-					<React.Fragment> 
-						<div className="moves-text">Current move: {this.state.currMove} / {this.state.totalMoves}</div>
+					<React.Fragment>
+						{this.state.isSolvable &&
+							<div className="moves-text">Current move: {this.state.currMove} / {this.state.totalMoves}</div>
+						}
 						<div className="stats-container">
 							<div className="stats-text">Memory used: <div className="stat-value">{this.state.stats.memory} Mo</div></div>
+							<div className="stats-text">Time in seconds: <div className="stat-value">{this.state.stats.time / 1000000}</div></div>
 							<div className="stats-text">Nodes created: <div className="stat-value">{this.state.stats.nodes_created}</div></div>
 							<div className="stats-text">Memory complexity: <div className="stat-value">{this.state.stats.nodes_stocked}</div></div>
-							<div className="stats-text">Time in seconds: <div className="stat-value">{this.state.stats.time / 1000000}</div></div>
 							<div className="stats-text">Time complexity: <div className="stat-value">{this.state.stats.turns}</div></div>
 						</div>
+						{!this.state.isMoving &&
+							<button
+							className="generic-button"
+							onClick={this.resetPuzzle}
+							>
+								Retry
+							</button>
+						}
 					</React.Fragment>
 				}
 				{!this.state.isSolving && !this.state.isMoving &&

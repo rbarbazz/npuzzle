@@ -9219,6 +9219,14 @@ var src_NPuzzle = __webpack_require__(51);
 // CONCATENATED MODULE: ./src/NPuzzle.jsx
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function NPuzzle_toConsumableArray(arr) { return NPuzzle_arrayWithoutHoles(arr) || NPuzzle_iterableToArray(arr) || NPuzzle_nonIterableSpread(); }
+
+function NPuzzle_nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function NPuzzle_iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function NPuzzle_arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -9257,7 +9265,7 @@ function (_Component) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Visu).call(this, props));
     _this.state = {
-      currNPuzzle: _this.props.baseNPuzzle,
+      currNPuzzle: NPuzzle_toConsumableArray(_this.props.baseNPuzzle),
       size: _this.props.size,
       heuristic: 'manhattan',
       greedy: false,
@@ -9269,13 +9277,31 @@ function (_Component) {
       currMove: 0,
       totalMoves: 0
     };
+    var solution = [];
     _this.solvePuzzle = _this.solvePuzzle.bind(_assertThisInitialized(_this));
     _this.stopSolving = _this.stopSolving.bind(_assertThisInitialized(_this));
-    var solution = [];
+    _this.resetPuzzle = _this.resetPuzzle.bind(_assertThisInitialized(_this));
     return _this;
   }
 
   _createClass(Visu, [{
+    key: "resetPuzzle",
+    value: function resetPuzzle() {
+      this.setState({
+        currNPuzzle: NPuzzle_toConsumableArray(this.props.baseNPuzzle),
+        size: this.props.size,
+        heuristic: 'manhattan',
+        greedy: false,
+        goal: [],
+        stats: {},
+        isSolving: false,
+        isSolvable: true,
+        isMoving: false,
+        currMove: 0,
+        totalMoves: 0
+      });
+    }
+  }, {
     key: "stopSolving",
     value: function stopSolving() {
       var _this2 = this;
@@ -9354,7 +9380,7 @@ function (_Component) {
       });
       axios_default.a.get('/solve', {
         params: {
-          baseNPuzzle: this.state.currNPuzzle.join(' '),
+          baseNPuzzle: this.props.baseNPuzzle.join(' '),
           greedy: this.state.greedy,
           heuristic: this.state.heuristic
         }
@@ -9452,7 +9478,7 @@ function (_Component) {
         onClick: this.stopSolving
       }, "Stop Solving")), !this.state.isSolvable && react_default.a.createElement("div", {
         className: "unsolvable-text"
-      }, "This NPuzzle is unsolvable !"), (this.state.isMoving || this.state.currNPuzzle == this.state.goal || !this.state.isSolvable) && react_default.a.createElement(react_default.a.Fragment, null, react_default.a.createElement("div", {
+      }, "This NPuzzle is unsolvable !"), (this.state.isMoving || this.state.currNPuzzle == this.state.goal || !this.state.isSolvable) && react_default.a.createElement(react_default.a.Fragment, null, this.state.isSolvable && react_default.a.createElement("div", {
         className: "moves-text"
       }, "Current move: ", this.state.currMove, " / ", this.state.totalMoves), react_default.a.createElement("div", {
         className: "stats-container"
@@ -9462,6 +9488,10 @@ function (_Component) {
         className: "stat-value"
       }, this.state.stats.memory, " Mo")), react_default.a.createElement("div", {
         className: "stats-text"
+      }, "Time in seconds: ", react_default.a.createElement("div", {
+        className: "stat-value"
+      }, this.state.stats.time / 1000000)), react_default.a.createElement("div", {
+        className: "stats-text"
       }, "Nodes created: ", react_default.a.createElement("div", {
         className: "stat-value"
       }, this.state.stats.nodes_created)), react_default.a.createElement("div", {
@@ -9470,13 +9500,12 @@ function (_Component) {
         className: "stat-value"
       }, this.state.stats.nodes_stocked)), react_default.a.createElement("div", {
         className: "stats-text"
-      }, "Time in seconds: ", react_default.a.createElement("div", {
-        className: "stat-value"
-      }, this.state.stats.time / 1000000)), react_default.a.createElement("div", {
-        className: "stats-text"
       }, "Time complexity: ", react_default.a.createElement("div", {
         className: "stat-value"
-      }, this.state.stats.turns)))), !this.state.isSolving && !this.state.isMoving && react_default.a.createElement("button", {
+      }, this.state.stats.turns))), !this.state.isMoving && react_default.a.createElement("button", {
+        className: "generic-button",
+        onClick: this.resetPuzzle
+      }, "Retry")), !this.state.isSolving && !this.state.isMoving && react_default.a.createElement("button", {
         className: "generic-button",
         onClick: this.props.resetStep
       }, "Reset"));
