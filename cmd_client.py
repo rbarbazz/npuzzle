@@ -4,58 +4,85 @@
 
 import sys
 import time
+import re
+import signal
 
 from npuzzle import api, parser, gen, npuzzle
 
 
+def get_puzzle_from_file(file):
+	with open(file, 'r') as taquin_file:
+		line = ''
+		while line == '': # Get size
+			line = re.sub(r'#.*', '', taquin_file.readline()).strip()
+		if line.isdigit() :
+			size = int(line)
+		else:
+			raise Exception('Wrong input file formatting')
+		taquin = []
+		for line in taquin_file:
+			line = re.sub(r'#.*', '', line.strip())
+			if line == '':
+				continue
+			splitted = line.split()
+			if len(splitted) == size and re.match(r'^[\d\s]+$', line):
+				taquin.append(list(map(int, splitted)))
+			else:
+				raise Exception('Wrong input file formatting')
+			if len(taquin) > size:
+				raise Exception('Wrong input file formatting')
+	return [col for line in taquin for col in line]
+
+
+def get_puzzle_from_string(raw):
+	if not re.match(r'^[\d\s\,]+$', raw):
+		return None
+	taquin = raw.split(',')
+	return list(map(int, taquin))
+
+
+def signal_handler(signalnum, stackframe):
+	if signalnum == signal.SIGINT:
+		api.stop_solving()
+		print("Solving has been stopped by user")
+
+
 def callback(data):
-	print("Thread responds:")
+	print("Solver has finished !")
 	print(data)
 
 
 def main():
-	r = gen.gen_random("snale", 3, 3000, True)
-	r1 = npuzzle.make_taquin(r)
-	print("Base:\n{}".format(r1))
-	print(api.check_solvability("snale", r))
-	r = api.solve("snale", r, True, "manhattan", callback)
-	if r["error"]:
-		print(r["data"])
-		return 0
-	# print(r)
-	api.wait_solving()
-	return 0
+	signal.signal(signal.SIGINT, signal_handler)
 
-	parser.sanitize_arguments()
+	# Parse args
+	args = parser.sanitize_arguments()
 
-	print("Heuristics: {}".format(api.get_available_heuristics()))
-	print("Types: {}".format(api.get_available_types()))
-	print("Make random:")
-	r = api.make_random("snale", 4, True, 1000)
-	if r["error"]:
-		print(r["data"])
-		return 0
-	print(r)
-	print("Check solvability:")
-	r = api.check_solvability(r["type"], r["npuzzle"])
-	if r["error"]:
-		print(r["data"])
-		return 0
-	print(r)
-	if r["solvable"]:
-		print("Is running ?: {}".format(api.is_solving()))
-		print("Solve:")
-		# Start solve in a new thread
-		r = api.solve(r["type"], r["npuzzle"], False, "manhattan", callback)
-		if r["error"]:
-			print(r["data"])
-			return 0
+	# Get puzzle in list format
+	if args.file is not None:
+		puzzle = get_puzzle_from_file(args.file)
+	elif args.raw is not None:
+		puzzle = get_puzzle_from_string(args.raw)
+	else:
+		puzzle = None
+
+	# Dispatch actions
+	r = None
+	if args.which == "gen":
+		r = api.make_random(args.type, args.size, not args.unsolvable,
+			args.iteration)
 		print(r)
-
-	print("\nWait 3secs")
-	api.wait_solving()
-	#Stop the current process and return
-	api.stop_solving()
+	elif args.which == "check":
+		r = api.check_solvability(args.type, puzzle)
+		print(r)
+	elif args.which == "solve":
+		print("Puzzle is being solved...")
+		r = api.solve(args.type, puzzle, args.greedy, args.heuristic,
+			callback=callback)
+		api.wait_solving()
+	else: # Never happens !
+		print("Error: wrong arguments")
+		return 0
 
 	return 0
 
