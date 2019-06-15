@@ -98,6 +98,9 @@ def sanitize_arguments():
 		help="The dimension of the npuzzle (> 1)", required=True)
 	parsers["gen"].add_argument("-i", "--iteration", type=int, default=5000,
 		help="Number of iterations to shuffle the npuzzle")
+	parsers["gen"].add_argument("-o", "--output", action="store_true",
+		default=False,
+		help="The output should be formatted for a file")
 
 	# Arguments check
 	group_check = parsers["check"].add_mutually_exclusive_group(required=True)

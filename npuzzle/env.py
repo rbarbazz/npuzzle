@@ -2,8 +2,12 @@
 #-*- coding: utf-8 -*-
 #
 
+import os
 from math import sqrt
 from resource import getrusage, RUSAGE_SELF
+
+
+IS_MACOS = True if "Darwin" in os.uname() else False
 
 
 def precalc_manhattan(goal):
@@ -48,11 +52,14 @@ def precalc_linear_conflicts(goal):
 	Return memory used by program in bytes on mac, Kbytes on linux
 """
 def get_mem_usage():
-	return getrusage(RUSAGE_SELF).ru_maxrss
+	if IS_MACOS:
+		return getrusage(RUSAGE_SELF).ru_maxrss // 1048576
+	else:
+		return getrusage(RUSAGE_SELF).ru_maxrss // 1024
 
 
 class Env:
-	def __init__(self, p_npuzzle, p_heuristic, p_greedy, p_verbose):
+	def __init__(self, p_npuzzle, p_heuristic, p_greedy):
 		self.goal = p_npuzzle
 		self.len_range = range(0, len(self.goal.board))
 		self.size_range = range(0, self.goal.size)
@@ -69,10 +76,9 @@ class Env:
 			"time": 0
 		}
 		self.solution = []
-		self.verbose = p_verbose
 
 	def up_mem(self):
-		self.stats["memory"] = int(get_mem_usage() / 1048576)
+		self.stats["memory"] = int(get_mem_usage())
 
 
 if __name__ == '__main__':
