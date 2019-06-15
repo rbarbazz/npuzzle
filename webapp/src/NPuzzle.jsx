@@ -1,5 +1,6 @@
 import React, { Component} from "react"
 import axios from "axios"
+import CircularProgress from '@material-ui/core/CircularProgress'
 import "./NPuzzle.css"
 
 
@@ -18,10 +19,25 @@ class Visu extends Component{
 			size: this.props.size,
 			heuristic: 'manhattan',
 			greedy: false,
-			goal: []
+			goal: [],
+			is_solving: false,
+			is_solvable: true,
+			is_moving: false
 		}
 		this.solvePuzzle = this.solvePuzzle.bind(this)
+		this.stopSolving = this.stopSolving.bind(this)
 		var solution = []
+	}
+
+
+	stopSolving(){
+		axios.get('/stop-solving', {
+			params: {}
+		})
+		.then((response) => {
+			this.setState({is_solving: false})
+			console.log(response)
+		})
 	}
 
 
@@ -29,7 +45,10 @@ class Visu extends Component{
 		let nextMove = this.state.currNPuzzle
 		let zeroPos = nextMove.indexOf(0)
 		if (this.solution.length === 0) {
-			this.setState({currNPuzzle: this.state.goal})
+			this.setState({
+				currNPuzzle: this.state.goal,
+				is_moving: false
+			})
 			return
 		}
 		
@@ -50,6 +69,7 @@ class Visu extends Component{
 
 
 	solvePuzzle(){
+		this.setState({is_solving: true})
 		axios.get('/solve', {
 			params: {
 				baseNPuzzle: this.state.currNPuzzle.join(' '),
@@ -58,12 +78,16 @@ class Visu extends Component{
 			}
 		})
 		.then((response) => {
+			this.setState({is_solving: false})
 			console.log(response)
 			if (response.data.error == true || response.data.solvable != true) {
-				alert("Error: Not solvable")
+				this.setState({is_solvable: false})
 			} else {
 				this.solution = response.data.solution
-				this.setState({goal: response.data.goal}, this.makeMove(this.solution.shift()))	
+				this.setState({
+					goal: response.data.goal,
+					is_moving: true
+				}, this.makeMove(this.solution.shift()))	
 			}
 		})
 	}
@@ -86,38 +110,65 @@ class Visu extends Component{
 						</div>)
 					})}
 				</div>
-				<div className="input-container">
-					<div className="form-caption">Greedy?</div>
-					<select
-						className="solvable-input"
-						onChange={(e) => this.setState({greedy: e.target.value})}
-						value={this.state.greedy}
+				{!this.state.is_solving && this.state.is_solvable && this.state.currNPuzzle != this.state.goal && !this.state.is_moving &&
+					<React.Fragment> 
+						<div className="input-container">
+							<div className="form-caption">Greedy?</div>
+							<select
+								className="solvable-input"
+								onChange={(e) => this.setState({greedy: e.target.value})}
+								value={this.state.greedy}
+							>
+								<option value={true}>Yes</option>
+								<option value={false}>No</option>
+							</select>
+						</div>
+						<div className="input-container">
+							<div className="form-caption">Choose a heuristic</div>
+							<select
+								className="solvable-input heuristic-input"
+								onChange={(e) => this.setState({heuristic: e.target.value})}
+								value={this.state.heuristic}
+							>
+								<option value="uniform">Uniform</option>
+								<option value="manhattan">Manhattan</option>
+								<option value="euclidian">Euclidian</option>
+								<option value="linear_conflicts">Linear Conflicts</option>
+								<option value="hamming_good">Hamming Good</option>
+								<option value="hamming_bad">Hamming Bad</option>
+							</select>
+						</div>
+						<button
+							className="generic-button"
+							onClick={this.solvePuzzle}
+						>
+							Solve
+						</button>
+					</React.Fragment>
+				}
+				{this.state.is_solving &&
+					<div className="loading-container">
+						<CircularProgress />
+						<div className="loading-text">Looking for solution...</div>
+						<button
+							className="generic-button"
+							onClick={this.stopSolving}
+						>
+							Stop Solving
+						</button>
+					</div>
+				}
+				{!this.state.is_solvable &&
+					<div className="unsolvable-text">This NPuzzle is unsolvable !</div>
+				}
+				{!this.state.is_solving && !this.state.is_moving &&
+					<button
+						className="generic-button"
+						onClick={this.props.resetStep}
 					>
-						<option value={true}>Yes</option>
-						<option value={false}>No</option>
-					</select>
-				</div>
-				<div className="input-container">
-					<div className="form-caption">Choose a heuristic</div>
-					<select
-						className="solvable-input heuristic-input"
-						onChange={(e) => this.setState({heuristic: e.target.value})}
-						value={this.state.heuristic}
-					>
-						<option value="uniform">Uniform</option>
-						<option value="manhattan">Manhattan</option>
-						<option value="euclidian">Euclidian</option>
-						<option value="linear_conflicts">Linear Conflicts</option>
-						<option value="hamming_good">Hamming Good</option>
-						<option value="hamming_bad">Hamming Bad</option>
-					</select>
-				</div>
-				<button
-					className="solve-button"
-					onClick={this.solvePuzzle}
-				>
-					Solve
-				</button>
+						Reset
+					</button>
+				}
 			</React.Fragment>
 		)
 	}
@@ -229,6 +280,12 @@ class NPuzzle extends Component{
 		}
 		this.sendInputPuzzle = this.sendInputPuzzle.bind(this)
 		this.sendGenParams = this.sendGenParams.bind(this)
+		this.resetStep = this.resetStep.bind(this)
+	}
+
+
+	resetStep() {
+		this.setState({stepNumber: 0})
 	}
 
 
@@ -286,6 +343,7 @@ class NPuzzle extends Component{
 				}
 				{this.state.stepNumber > 0 &&
 					<Visu
+						resetStep={this.resetStep}
 						baseNPuzzle={this.state.baseNPuzzle}
 						size={this.state.size}
 					/>
