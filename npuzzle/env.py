@@ -65,7 +65,8 @@ class Env:
 			"nodes_stocked": 1,
 			"nodes_created": 1,
 			"turns": 0,
-			"memory": 0
+			"memory": 0,
+			"time": 0
 		}
 		self.solution = []
 		self.verbose = p_verbose
