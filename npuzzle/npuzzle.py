@@ -77,13 +77,12 @@ class NPuzzle:
 
 	def __str__(self):
 		r = []
-		for i, v in enumerate(self.board):
-			if i != 0 and i % self.size == 0:
-				r += "\n"
-			if i < len(self.board) - 1 and i % self.size < self.size - 1:
-				r += "{}\t".format(v)
-			else:
-				r += "{}".format(v)
+		puzzle_len = len(self.board)
+		w = len(str(puzzle_len))
+		for y in range(self.size):
+			for x in range(self.size):
+				r += "%s " % (str(self.board[x + y * self.size]).rjust(w))
+			r += "\n" if y < self.size - 1 else ""
 		return "".join(r)
 
 
@@ -193,14 +192,6 @@ def astar(env, state_start):
 		if len(open_lst) > env.stats["nodes_stocked"]:
 			env.stats["nodes_stocked"] = len(open_lst)
 
-		if env.verbose and env.stats["turns"] % 5000 == 0:
-			print("\rTurn: {} \tNodes: {} \tRAM Mo: {}".format(
-				env.stats["turns"], env.stats["nodes_created"],
-				env.stats["memory"]
-			), end='')
-
-	if env.verbose:
-		print()
 
 	# Store solution
 	if found:
@@ -229,7 +220,7 @@ def solve(npuzzle, goal, greedy, heuristic):
 		return None
 	tmp_heuristic = globals()[heuristic]
 
-	env = Env(npuzzle_goal, tmp_heuristic, greedy, False)
+	env = Env(npuzzle_goal, tmp_heuristic, greedy)
 	state_start = State(npuzzle_start, NONE, None, 0, env)
 
 	start_time = datetime.now()

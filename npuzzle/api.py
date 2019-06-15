@@ -58,6 +58,7 @@ def make_random(ntype, size, is_solvable=True, iterations=5000):
 	ret["goal"] = gen.gen_goal(ntype, size)
 	ret["npuzzle"] = gen.gen_random(ntype, size, iterations, is_solvable)
 	ret["type"] = ntype
+	ret["iteration"] = iterations
 	ret["size"] = size
 	ret["solvable"] = gen.solvable(ret["type"],
 		npuzzle.make_taquin(ret["npuzzle"]),
