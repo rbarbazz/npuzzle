@@ -37,7 +37,8 @@ def solve():
     greedy = request.args.get('greedy')
     greedy = True if greedy == "true" else False
     heuristic = request.args.get('heuristic')
-    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), greedy, heuristic, None)
+    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), greedy, heuristic)
+    api.wait_solving()
     return jsonify(dataJson)
 
 

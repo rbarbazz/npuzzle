@@ -10,7 +10,6 @@ Array.prototype.move = function(from,to){
 }  
   
 
-
 class Visu extends Component{
 	constructor(props) {
 		super(props)
@@ -35,13 +34,20 @@ class Visu extends Component{
 			params: {}
 		})
 		.then((response) => {
-			this.setState({is_solving: false})
 			console.log(response)
+			if (response.data == 'Success') {
+				this.setState({is_solving: false})
+			}
 		})
 	}
 
 
 	makeMove(move){
+		let movingSpeed = 100
+		if (this.solution.length > 50) {
+			movingSpeed = 40
+		}
+		console.log(movingSpeed)
 		let nextMove = this.state.currNPuzzle
 		let zeroPos = nextMove.indexOf(0)
 		if (this.solution.length === 0) {
@@ -63,7 +69,7 @@ class Visu extends Component{
 		}
 		
 		this.setState({currNPuzzle: nextMove}, () => {
-			setTimeout(() => this.makeMove(this.solution.shift()), 100)
+			setTimeout(() => this.makeMove(this.solution.shift()), movingSpeed)
 		})
 	}
 
@@ -78,11 +84,11 @@ class Visu extends Component{
 			}
 		})
 		.then((response) => {
-			this.setState({is_solving: false})
 			console.log(response)
-			if (response.data.error == true || response.data.solvable != true) {
+			this.setState({is_solving: false})
+			if (response.data.error == true || response.data.solvable == false) {
 				this.setState({is_solvable: false})
-			} else {
+			} else if (response.data.found == true) {
 				this.solution = response.data.solution
 				this.setState({
 					goal: response.data.goal,
