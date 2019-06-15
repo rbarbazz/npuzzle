@@ -83,7 +83,7 @@ def check_solvability(ntype, npuzzle_input):
 	return ret
 
 
-def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback):
+def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback=None):
 	global CURRENT_PROCESS
 	if is_solving():
 		return {"error": True, "data": "A npuzzle is being solved already"}
@@ -109,10 +109,8 @@ def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback):
 	ret["solvable"] = gen.solvable(ret["type"], tmp,
 		npuzzle.make_taquin(ret["goal"]))
 	if ret["solvable"] or True:
-		# signal.signal(signal.SIGINT, signal_handler)
 		CURRENT_PROCESS = Process(ret, callback)
 		CURRENT_PROCESS.start()
-		CURRENT_PROCESS.join()
 	return ret
 
 
@@ -124,7 +122,7 @@ def signal_handler(sig, frame):
 
 
 class Process(threading.Thread):
-	def __init__(self, data, callback):
+	def __init__(self, data, callback=None):
 		threading.Thread.__init__(self, daemon=False)
 		self.data = data
 		self.callback = callback
@@ -141,7 +139,8 @@ class Process(threading.Thread):
 			self.data["stats"] = result["stats"]
 			self.data["found"] = result["found"]
 		self.data["running"] = False
-		# self.callback(self.data)
+		if self.callback is not None:
+			self.callback(self.data)
 
 	def stop_running(self):
 		npuzzle.RUNNING = False
