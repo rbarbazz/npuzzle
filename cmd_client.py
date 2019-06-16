@@ -47,7 +47,7 @@ def signal_handler(signalnum, stackframe):
 		print("Solving has been stopped by user")
 
 
-def process_solve(args, data):
+def cb_solve(args, data):
 	if data["error"]:
 		print(data["data"])
 		return
@@ -60,7 +60,10 @@ def process_solve(args, data):
 		data["heuristic"]))
 	taquin = npuzzle.make_taquin(data["npuzzle"])
 	goal = npuzzle.make_taquin(data["goal"])
-	print("\nFrom:\n{}\nTo:\n{}\n".format(taquin, goal))
+	if data["found"]:
+		print("\nFrom:\n{}\nTo:\n{}\n".format(taquin, goal))
+	else:
+		print("\nNot found\n")
 	print("Solved with {} moves in {}sec".format(len(data["solution"]),
 		data["stats"]["time"] / 1000000))
 	print("Time complexity (number of loops): {}".format(
@@ -69,6 +72,16 @@ def process_solve(args, data):
 		data["stats"]["nodes_stocked"]))
 	print("Nodes explored: {}".format(data["stats"]["nodes_created"]))
 	print("Memory used: {}Mo".format(int(data["stats"]["memory"])))
+
+def process_solve(puzzle, args):
+	r = api.solve(args.type, puzzle, args.greedy, args.heuristic,
+		callback=lambda data: cb_solve(args, data))
+	if r["error"]:
+		print(r["data"])
+		return
+	if not args.quiet:
+		print("Puzzle is being solved...")
+	api.wait_solving()
 
 def process_gen(args, data):
 	if data["error"]:
@@ -123,11 +136,7 @@ def main():
 		r = api.check_solvability(args.type, puzzle)
 		process_check(args, r)
 	elif args.which == "solve":
-		if not args.quiet:
-			print("Puzzle is being solved...")
-		r = api.solve(args.type, puzzle, args.greedy, args.heuristic,
-			callback=lambda data: process_solve(args, data))
-		api.wait_solving()
+		process_solve(puzzle, args)
 	else: # Never happens !
 		print("Error: wrong arguments")
 		return 0

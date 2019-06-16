@@ -3,8 +3,9 @@
 #
 
 import os
+import psutil
 from math import sqrt
-from resource import getrusage, RUSAGE_SELF
+from resource import getrusage, getrlimit, RUSAGE_SELF, RLIMIT_DATA
 
 
 IS_MACOS = True if "Darwin" in os.uname() else False
@@ -79,6 +80,10 @@ class Env:
 
 	def up_mem(self):
 		self.stats["memory"] = int(get_mem_usage())
+
+
+	def get_mem_percent(self):
+		return int(psutil.virtual_memory()[2])
 
 
 if __name__ == '__main__':

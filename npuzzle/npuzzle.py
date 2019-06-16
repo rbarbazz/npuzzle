@@ -189,6 +189,9 @@ def astar(env, state_start):
 		env.stats["turns"] += 1
 		if env.stats["turns"] % 1000 == 0:
 			env.up_mem()
+			# Memory security, stop if system memory is > 90% used
+			if env.get_mem_percent() > 90:
+				break
 		if len(open_lst) > env.stats["nodes_stocked"]:
 			env.stats["nodes_stocked"] = len(open_lst)
 
