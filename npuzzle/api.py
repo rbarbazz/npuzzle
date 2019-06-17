@@ -16,8 +16,10 @@ __all__ = ["get_available_heuristics", "get_available_types", "solve",
 
 CURRENT_PROCESS = None
 
+
 def get_available_heuristics():
-	return heuristic.HEURISTICS_LIST
+	return list(map(lambda s: s.replace("_", " ").capitalize(),
+		heuristic.HEURISTICS_LIST))
 
 
 def get_available_types():

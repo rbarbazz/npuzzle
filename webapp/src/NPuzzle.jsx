@@ -7,7 +7,7 @@ import "./NPuzzle.css"
 Array.prototype.move = function(from,to){
 	this.splice(to,0,this.splice(from,1)[0]);
 	return this;
-}  
+}
 
 
 class Visu extends Component{
@@ -78,7 +78,7 @@ class Visu extends Component{
 			})
 			return
 		}
-		
+
 		if (move == 0) {
 			[nextMove[zeroPos], nextMove[zeroPos - this.state.size]] = [nextMove[zeroPos - this.state.size], nextMove[zeroPos]];
 		} else if (move == 1) {
@@ -88,7 +88,7 @@ class Visu extends Component{
 		} else {
 			[nextMove[zeroPos], nextMove[zeroPos - 1]] = [nextMove[zeroPos - 1], nextMove[zeroPos]];
 		}
-		
+
 		this.setState(prevState => ({
 			currNPuzzle: nextMove,
 			currMove: prevState.currMove + 1
@@ -122,7 +122,7 @@ class Visu extends Component{
 					goal: response.data.goal,
 					isMoving: true,
 					totalMoves: this.solution.length
-				}, this.makeMove(this.solution.shift()))	
+				}, this.makeMove(this.solution.shift()))
 			}
 		})
 	}
@@ -146,7 +146,7 @@ class Visu extends Component{
 					})}
 				</div>
 				{!this.state.isSolving && this.state.isSolvable && this.state.currNPuzzle != this.state.goal && !this.state.isMoving &&
-					<React.Fragment> 
+					<React.Fragment>
 						<div className="input-container">
 							<div className="form-caption">Greedy?</div>
 							<select
@@ -171,6 +171,7 @@ class Visu extends Component{
 								<option value="linear_conflicts">Linear Conflicts</option>
 								<option value="hamming_good">Hamming Good</option>
 								<option value="hamming_bad">Hamming Bad</option>
+								<option value="custom">Custom</option>
 							</select>
 						</div>
 						<button
@@ -386,8 +387,8 @@ class NPuzzle extends Component{
 			}
 		})
 	}
-	
-	
+
+
 	render(){
 		return(
 			<div className="main-container">
