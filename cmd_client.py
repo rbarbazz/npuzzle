@@ -35,10 +35,14 @@ def get_puzzle_from_file(file):
 
 
 def get_puzzle_from_string(raw):
-	if not re.match(r'^[\d\s\,]+$', raw):
+	if not re.match(r'^[\s]*([0-9]+[\s]*,[\s]*)+[0-9]+[\s]*$', raw):
 		return None
 	taquin = raw.split(',')
-	return list(map(int, taquin))
+	try:
+		r = list(map(int, taquin))
+	except:
+		r = None
+	return r
 
 
 def signal_handler(signalnum, stackframe):

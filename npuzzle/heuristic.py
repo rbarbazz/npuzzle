@@ -10,10 +10,23 @@ HEURISTICS_LIST = [
 	"linear_conflicts",
 	"hamming_good",
 	"hamming_bad",
+	"custom",
 ]
 
 __all__ = HEURISTICS_LIST
 
+
+"""
+Custom heuristic, just apply a coefficient for each manhattan value
+"""
+def custom(env, npuzzle):
+	board = npuzzle.board
+	cost = env.pre_man
+	c_cost = env.pre_custom
+	return sum([
+		c_cost[cost[i][board[i]]]
+		for i in env.len_range
+	])
 
 """
 Ultra fast manhattan heurstic, precomputed

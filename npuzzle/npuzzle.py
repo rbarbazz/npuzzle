@@ -186,14 +186,14 @@ def astar(env, state_start):
 				open_set[next_state] = next_state
 				env.stats["nodes_created"] += 1
 
+		if len(open_lst) > env.stats["nodes_stocked"]:
+			env.stats["nodes_stocked"] = len(open_lst)
 		env.stats["turns"] += 1
 		if env.stats["turns"] % 1000 == 0:
 			env.up_mem()
 			# Memory security, stop if system memory is > 90% used
-			if env.get_mem_percent() > 90:
+			if env.out_of_memory():
 				break
-		if len(open_lst) > env.stats["nodes_stocked"]:
-			env.stats["nodes_stocked"] = len(open_lst)
 
 
 	# Store solution
@@ -231,6 +231,7 @@ def solve(npuzzle, goal, greedy, heuristic):
 	exec_time = datetime.now() - start_time
 	env.stats["time"] = int(exec_time / timedelta(microseconds=1))
 	list_moves = [state.action for state in env.solution]
-	result = {"solution": list_moves, "stats": env.stats, "found": found}
+	result = {"solution": list_moves, "stats": env.stats, "found": found,
+		"error": env.error, "data": "Out of memory" if env.error else ""}
 	RUNNING = False
 	return result

@@ -109,14 +109,16 @@ def gen_random(ntype, size, iterations, solvable):
 
 
 def count_inversion(base, goal):
+	g_board = goal.board
+	index = [g_board.index(i) for i in range(len(g_board))]
+	index[0] = 999999
+	board = base.board
 	tt_inv = 0
-	for i in range(0, len(base.board) - 1):
-		if base.board[i] == 0:
+	for i in range(0, len(board) - 1):
+		if board[i] == 0:
 			continue
-		for j in range(i + 1, len(base.board)):
-			if base.board[j] == 0:
-				continue
-			if goal.board.index(base.board[j]) < goal.board.index(base.board[i]):
+		for j in board[i+1:]:
+			if index[j] < index[board[i]]:
 				tt_inv += 1
 	return tt_inv
 
