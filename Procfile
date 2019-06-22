@@ -1,1 +1,1 @@
-web: gunicorn web_client.py:web_client
+web: gunicorn web_client:web_client
