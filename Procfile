@@ -1,1 +1,1 @@
-web: gunicorn web_client:web_client
+web: gunicorn webapp.wsgi --log-file -
