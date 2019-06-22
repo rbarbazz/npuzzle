@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import isMobileOnly from 'react-device-detect';
+import Slider from '@material-ui/lab/Slider';
 
 class InputForm extends Component {
   constructor(props) {
@@ -12,18 +13,6 @@ class InputForm extends Component {
       isSolvable: true,
       iterations: 3000,
     };
-  }
-
-  handleSizeInput(value) {
-    let size = value;
-    const maxSize = (isMobileOnly ? 5 : 8);
-
-    if (value > maxSize) {
-      size = maxSize;
-    } else if (value < 3) {
-      size = 3;
-    }
-    this.setState({ size });
   }
 
   handleIterationsInput(value) {
@@ -57,13 +46,13 @@ class InputForm extends Component {
         <div className="form-generator-container">
           <div className="input-container">
             <div className="form-caption">{`Size between 3 and ${(isMobileOnly ? 5 : 8)}`}</div>
-            <input
-              className="size-input"
-              type="number"
-              min="3"
-              max="8"
-              onChange={e => this.handleSizeInput(e.target.value)}
-              value={size}
+            <Slider
+              defaultValue={3}
+              step={1}
+              min={3}
+              max={8}
+              onChange={(e, value) => this.setState({ size: value })}
+              valueLabelDisplay="on"
             />
           </div>
           <div className="input-container">

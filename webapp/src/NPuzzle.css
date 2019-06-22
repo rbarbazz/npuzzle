@@ -172,6 +172,9 @@ button:hover {
 	width: 100%;
 	justify-content: space-evenly;
 }
+.form-generator-container .input-container:first-of-type .form-caption {
+	margin-bottom: 50px;
+}
 @media only screen and (max-width: 480px) {
 	.form-generator-container,
 	.input-wrapper {
