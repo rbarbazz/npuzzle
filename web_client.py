@@ -5,7 +5,7 @@ import os
 app = Flask(
         __name__,
         root_path='webapp',
-        template_folder='public',
+        template_folder='templates',
         static_folder=os.path.abspath('webapp/static')
         )
 
@@ -18,7 +18,10 @@ def npuzzle_web():
 @app.route('/check_solvability')
 def check_solvability():
     inputPuzzle = request.args.get('inputPuzzle')
-    dataJson = api.check_solvability('snale', list(map(int, inputPuzzle.split())))
+    dataJson = api.check_solvability(
+            'snale',
+            list(map(int, inputPuzzle.split()))
+            )
     return jsonify(dataJson)
 
 
@@ -38,7 +41,10 @@ def solve():
     greedy = request.args.get('greedy')
     greedy = True if greedy == "true" else False
     heuristic = request.args.get('heuristic')
-    dataJson = api.solve('snale', list(map(int, baseNPuzzle.split())), greedy, heuristic)
+    dataJson = api.solve(
+            'snale',
+            list(map(int, baseNPuzzle.split())), greedy, heuristic
+            )
     api.wait_solving()
     return jsonify(dataJson)
 
@@ -50,6 +56,11 @@ def stop_solving():
     else:
         return 'Failure'
 
+
+@app.route('/get-heuristics')
+def get_heuristics():
+    dataJson = api.get_available_heuristics()
+    return jsonify(dataJson)
 
 
 if __name__ == "__main__":

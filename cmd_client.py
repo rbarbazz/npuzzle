@@ -132,6 +132,8 @@ def main():
 	else:
 		puzzle = None
 	# Dispatch actions
+	if not hasattr(args, 'which'):
+		return 0
 	if args.which == "gen":
 		r = api.make_random(args.type, args.size, not args.unsolvable,
 			args.iteration)

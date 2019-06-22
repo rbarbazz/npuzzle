@@ -1,33 +1,62 @@
 body {
-	background-color: #282828;
+	margin: 0;
 }
 body * {
-	font-family: 'Roboto Mono', monospace;
-	color: #98971a;
+	font-family: 'Roboto', sans-serif;
+	color: #FF6B55;
+	letter-spacing: 0.5px;
+}
+#root {
+	background-image: url('/static/images/order_background.jpg');
+	background-size: cover;
+	background-repeat: no-repeat;
+	padding-top: 50px;
+	height: 100vh;
 }
 h1 {
 	font-size: 40px;
 	text-align: center;
+	margin: 0;
+	margin-bottom: 20px;
+}
+button {
+	background-color: #FF6B55;
+	color: white;
+	border-radius: 5px;
+	padding: 7px 12px;
+	border: solid 2px #FF6B55;
+	font-size: 17px;
+	cursor: pointer;
+}
+button:hover {
+	background-color: white;
+	color: #FF6B55;
+	border: solid 2px #FF6B55;
 }
 .main-container {
+	-moz-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+	-webkit-box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
 	align-items: center;
+	background-color: white;
+	border-radius: 5px;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
 	display: flex;
 	flex-direction: column;
 	margin: 0 auto;
-	max-width: 800px;
-	width: 100%;
+	max-width: 685px;
+	padding: 20px;
 }
 .puzzle-container {
-	-moz-box-shadow:    inset 0 0 4px #282828;
+	-moz-box-shadow: inset 0 0 4px #282828;
 	-webkit-box-shadow: inset 0 0 4px #282828;
 	align-items: center;
-	background-color: wheat;
-	box-shadow:         inset 0 0 4px #282828;
+	background-color: #e8dac0;
+	box-shadow: inset 0 0 4px #282828;
 	display: flex;
 	flex-wrap: wrap;
-	height: 520px;
+	height: 450px;
 	justify-content: space-around;
-	max-width: 520px;
+	max-width: 450px;
 	width: 100%;
 
 }
@@ -47,10 +76,10 @@ h1 {
 	align-items: center;
 	display: flex;
 	flex-direction: column;
-	margin-top: 30px;
 }
 .form-caption {
 	margin-top: 10px;
+	text-align: center;
 }
 .puzzle-input,
 .size-input,
@@ -62,7 +91,7 @@ h1 {
 	font-size: 17px;
 	margin: 8px 0;
 	outline: none;
-	padding: 12px 20px;
+	padding: 5px 10px;
 	max-width: 520px;
 	width: 100%;
 }
@@ -70,14 +99,15 @@ h1 {
 	margin: 50px 0;
 }
 .size-input {
-	width: 70px;
+	margin-top: 27px;
+	width: 60px;
 }
 .iterations-input {
-	width: 110px;
+	width: 90px;
 }
 .solvable-input {
-	margin-top: 20px;
-	width: 100px;
+	margin-top: 27px;
+	width: 80px;
 }
 .form-caption.section-title {
 	text-transform: uppercase;
@@ -87,7 +117,6 @@ h1 {
 .form-generator-container {
 	display: flex;
 	justify-content: space-evenly;
-	flex-wrap: wrap;
 	width: 100%;
 }
 .input-container {
@@ -99,9 +128,6 @@ h1 {
 .input-validation,
 .generic-button {
 	margin-top: 15px;
-	color: #282828;
-	font-size: 17px;
-	background-color: white;
 }
 .heuristic-input {
 	width: 280px;
@@ -134,4 +160,25 @@ h1 {
 }
 .stat-value {
     float: right;
+}
+.input-wrapper {
+	display: flex;
+	justify-content: space-evenly;
+	margin-top: 15px;
+    width: 100%;
+}
+.buttons-container {
+	display: flex;
+	width: 100%;
+	justify-content: space-evenly;
+}
+@media only screen and (max-width: 480px) {
+	.form-generator-container,
+	.input-wrapper {
+		flex-wrap: wrap;
+	}
+	#root {
+		height: initial;
+		padding: 10px;
+	}
 }
