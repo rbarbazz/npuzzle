@@ -23,7 +23,8 @@ def get_available_heuristics():
 
 
 def get_available_types():
-	return npuzzle.TYPES_LIST
+	return list(map(lambda s: s.replace("_", " ").capitalize(),
+		npuzzle.TYPES_LIST))
 
 
 def stop_solving():
