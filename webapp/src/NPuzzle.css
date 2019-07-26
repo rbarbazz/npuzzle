@@ -175,6 +175,9 @@ button:hover {
 .form-generator-container .input-container:first-of-type .form-caption {
 	margin-bottom: 50px;
 }
+.error-snackbar > div {
+	background-color: white;
+}
 @media only screen and (max-width: 480px) {
 	.form-generator-container,
 	.input-wrapper {

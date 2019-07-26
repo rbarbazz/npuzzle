@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Snackbar from '@material-ui/core/Snackbar';
 import PropTypes from 'prop-types';
 import uniqid from 'uniqid';
 
@@ -22,6 +23,7 @@ class Visu extends Component {
       currMove: 0,
       totalMoves: 0,
       heuristicsList: [],
+      snackbarOpen: false,
     };
     this.solvePuzzle = this.solvePuzzle.bind(this);
     this.stopSolving = this.stopSolving.bind(this);
@@ -29,6 +31,7 @@ class Visu extends Component {
     this.getHeuristics = this.getHeuristics.bind(this);
     this.solution = [];
     this.getHeuristics();
+    this.nextMoveFunc = null;
   }
 
   getHeuristics() {
@@ -42,6 +45,7 @@ class Visu extends Component {
 
   resetPuzzle() {
     const { baseNPuzzle, size } = this.props;
+
     this.setState({
       currNPuzzle: [...baseNPuzzle],
       size,
@@ -53,17 +57,19 @@ class Visu extends Component {
       currMove: 0,
       totalMoves: 0,
     });
+    clearTimeout(this.nextMoveFunc);
   }
 
   stopSolving() {
-    axios.get('/stop-solving', {
+    return axios.get('/stop-solving', {
       params: {},
     })
       .then((response) => {
-        console.log(response);
         if (response.data === 'Success') {
           this.setState({ isSolving: false });
+          return true;
         }
+        return false;
       });
   }
 
@@ -77,6 +83,7 @@ class Visu extends Component {
     } = this.state;
     const nextMove = currNPuzzle;
     const zeroPos = nextMove.indexOf(0);
+
     if (this.solution.length === 0) {
       this.setState({
         currNPuzzle: goal,
@@ -100,13 +107,24 @@ class Visu extends Component {
       currNPuzzle: nextMove,
       currMove: prevState.currMove + 1,
     }), () => {
-      setTimeout(() => this.makeMove(this.solution.shift()), movingSpeed);
+      this.nextMoveFunc = setTimeout(() => this.makeMove(this.solution.shift()), movingSpeed);
     });
   }
 
   solvePuzzle() {
     const { greedy, heuristic } = this.state;
     const { baseNPuzzle } = this.props;
+    const timeoutFunc = setInterval(() => {
+      this.stopSolving()
+        .then((stopped) => {
+          if (stopped) {
+            this.setState({ snackbarOpen: true });
+            clearInterval(timeoutFunc);
+          }
+        });
+    },
+    65000);
+
     this.setState({ isSolving: true });
     axios.get('/solve', {
       params: {
@@ -114,9 +132,10 @@ class Visu extends Component {
         greedy,
         heuristic,
       },
+      timeout: 60000,
     })
       .then((response) => {
-        console.log(response);
+        clearInterval(timeoutFunc);
         this.setState({ isSolving: false });
         if (response.data.error === true || response.data.solvable === false) {
           this.setState({
@@ -125,6 +144,7 @@ class Visu extends Component {
           });
         } else if (response.data.found === true) {
           this.solution = response.data.solution;
+
           this.setState({
             stats: response.data.stats,
             goal: response.data.goal,
@@ -132,6 +152,15 @@ class Visu extends Component {
             totalMoves: this.solution.length,
           }, this.makeMove(this.solution.shift()));
         }
+      })
+      .catch(() => {
+        this.stopSolving()
+          .then((stopped) => {
+            if (stopped) {
+              this.setState({ snackbarOpen: true });
+              clearInterval(timeoutFunc);
+            }
+          });
       });
   }
 
@@ -149,11 +178,13 @@ class Visu extends Component {
       totalMoves,
       stats,
       heuristicsList,
+      snackbarOpen,
     } = this.state;
     const { resetStep } = this.props;
     const {
       memory, time, nodes_created: nodesCreated, nodes_stocked: nodesStocked, turns,
     } = stats;
+
     return (
       <React.Fragment>
         <div className="puzzle-container">
@@ -268,7 +299,7 @@ class Visu extends Component {
             </div>
             )
           }
-          {!isMoving && (currNPuzzle === goal || !isSolvable)
+          {(isMoving || currNPuzzle === goal || !isSolvable)
             && (
               <button
                 type="button"
@@ -291,6 +322,20 @@ class Visu extends Component {
             )
           }
         </div>
+        <Snackbar
+          className="error-snackbar"
+          autoHideDuration={5000}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'center',
+          }}
+          open={snackbarOpen}
+          onClose={() => this.setState({ snackbarOpen: false })}
+          ContentProps={{
+            'aria-describedby': 'message-id',
+          }}
+          message={<span id="message-id">Solving took too long, sorry</span>}
+        />
       </React.Fragment>
     );
   }

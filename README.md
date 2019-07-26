@@ -12,16 +12,12 @@
 - [X] Generation perso
 
 ### Parsing, input, output
-- [ ] Arguments (fichier en entree ou appeler le generateur, taille du puzzle, solvable ou non, heuristic etc...)
-- [ ] Parser le puzzle en entree et verifier les parametres
-- [ ] Affichage des stats, de la solution etc... en console
-- [ ] Retour en texte ou json (pour etre recuperer par le client)
-- [ ] ...
+- [X] Arguments (fichier en entree ou appeler le generateur, taille du puzzle, solvable ou non, heuristic etc...)
+- [X] Parser le puzzle en entree et verifier les parametres
+- [X] Affichage des stats, de la solution etc... en console
+- [X] Retour en texte ou json (pour etre recuperer par le client)
 
 ### Client
-- [ ] Configuration des parametres
-- [ ] Affichage du puzzle
-- [ ] Pouvoir le resoudre a la main, automatique ou step by step
-- [ ] Affichage des stats
-- [ ] Benchmark des differentes heuristics
-- [ ] ...
+- [X] Configuration des parametres
+- [X] Affichage du puzzle
+- [X] Affichage des stats
