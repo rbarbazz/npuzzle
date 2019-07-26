@@ -1,0 +1,15 @@
+{
+  "name": "root",
+  "version": "1.0.0",
+  "description": "root config",
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "build": "npm install --prefix ./webapp && npm run build --prefix ./webapp"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
