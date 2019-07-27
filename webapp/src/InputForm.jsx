@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import isMobileOnly from 'react-device-detect';
+import { isMobileOnly } from 'react-device-detect';
 import Slider from '@material-ui/core/Slider';
 
 class InputForm extends Component {
@@ -31,6 +31,7 @@ class InputForm extends Component {
     const {
       inputPuzzle, size, isSolvable, iterations,
     } = this.state;
+
     return (
       <div className="input-form-container">
         <div className="form-caption section-title">Input a list of numbers separated by spaces</div>
@@ -50,9 +51,10 @@ class InputForm extends Component {
               defaultValue={3}
               step={1}
               min={3}
-              max={8}
+              max={(isMobileOnly ? 5 : 8)}
               onChange={(e, value) => this.setState({ size: value })}
               valueLabelDisplay="on"
+              style={(isMobileOnly ? { width: '80%' } : {})}
             />
           </div>
           <div className="input-container">

@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 import React, { Component } from 'react';
 import axios from 'axios';
 import './NPuzzle.css';
