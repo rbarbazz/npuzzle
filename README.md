@@ -1,23 +1,46 @@
-# npuzzle
+# N-puzzle
+The goal of this project is to solve a variable size puzzle (similar to the 15 puzzle problem).
+To find a solution from the initial to the final state, the program uses an implementation of the A* algorithm, combined with multiples heuristics available.
 
-## TODO
+In addition to the command line program, a webapp is available, locally or [hosted](https://npuzzle.herokuapp.com/) (takes a few seconds to wake up).
 
-### Algo
-- [X] Implementer A*
-- [X] Differentes heuristic (manhattan, hamming (good et bad), euclidienne, linear conflicts)
-- [X] A star uniform et greedy
-- [X] Calcul de la complexite + stats perfs
-- [X] Implementation tres rapide
-- [X] Verifier la solvabilite
-- [X] Generation perso
+![gif](demo.gif)
 
-### Parsing, input, output
-- [X] Arguments (fichier en entree ou appeler le generateur, taille du puzzle, solvable ou non, heuristic etc...)
-- [X] Parser le puzzle en entree et verifier les parametres
-- [X] Affichage des stats, de la solution etc... en console
-- [X] Retour en texte ou json (pour etre recuperer par le client)
+## Usage:
+### CLI
+Install required Python packages:
+```
+pip install -r requirements.txt
+```
 
-### Client
-- [X] Configuration des parametres
-- [X] Affichage du puzzle
-- [X] Affichage des stats
+Run:
+```
+python3 cmd_client.py [-h] [-q] [-t TYPE] {gen,check,solve} ...
+
+NPuzzle solver
+
+positional arguments:
+  {gen,check,solve}
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q, --quiet           No output
+  -t TYPE, --type TYPE  Type of npuzzle: snale, linear
+```
+
+For each mode (gen, check, solve), you can get the available options with ```-h```.
+```
+python3 cmd_client.py solve -h
+```
+
+### Webapp
+Build:
+```
+npm run build
+```
+
+Run:
+```
+python3 web_client.py
+```
+Then access ```http://localhost:5000/``` on your browser.
