@@ -11,27 +11,28 @@ from npuzzle import api, parser, gen, npuzzle
 
 
 def get_puzzle_from_file(file):
-	with open(file, 'r') as taquin_file:
-		line = ''
-		while line == '': # Get size
-			line = re.sub(r'#.*', '', taquin_file.readline()).strip()
-		if line.isdigit() :
-			size = int(line)
-		else:
-			raise Exception('Wrong input file formatting')
-		taquin = []
-		for line in taquin_file:
-			line = re.sub(r'#.*', '', line.strip())
-			if line == '':
-				continue
-			splitted = line.split()
-			if len(splitted) == size and re.match(r'^[\d\s]+$', line):
-				taquin.append(list(map(int, splitted)))
-			else:
-				raise Exception('Wrong input file formatting')
-			if len(taquin) > size:
-				raise Exception('Wrong input file formatting')
-	return [col for line in taquin for col in line]
+	lines = []
+	with open(file, 'r') as f:
+		while True:
+			line = f.readline()
+			if line == '': # EOF
+				break
+			line = line.strip()
+			if len(line):
+				lines += [line]
+	if len(lines) == 0:
+		return None
+	# Check first line -> size
+	size = lines.pop(0)
+	if not size.isdigit():
+		return None
+	size = int(size)
+	taquin = []
+	for line in lines:
+		taquin += line.split()
+	if size * size != len(taquin):
+		return None
+	return taquin
 
 
 def get_puzzle_from_string(raw):
@@ -78,13 +79,19 @@ def cb_solve(args, data):
 	print("Memory used: {}Mo".format(int(data["stats"]["memory"])))
 
 def process_solve(puzzle, args):
-	r = api.solve(args.type, puzzle, args.greedy, args.heuristic,
+	r = api.solve(args.type, puzzle, args.greedy, args.heuristic, args.force,
 		callback=lambda data: cb_solve(args, data))
 	if r["error"]:
 		print(r["data"])
 		return
 	if not args.quiet:
 		print("Puzzle is being solved...")
+		if r["force"] and not r["solvable"]:
+			print("You asked to force the solving even if the puzzle is not "
+				"solvable!")
+		if not r["force"] and not r["solvable"]:
+			print("The puzzle is not solvable, I'm too lazy too compute "
+				"infinity!")
 	api.wait_solving()
 
 def process_gen(args, data):
@@ -127,6 +134,8 @@ def main():
 	# Get puzzle in list format
 	if "file" in args and args.file is not None:
 		puzzle = get_puzzle_from_file(args.file)
+		if puzzle is not None:
+			puzzle = get_puzzle_from_string(",".join(puzzle))
 	elif "raw" in args and args.raw is not None:
 		puzzle = get_puzzle_from_string(args.raw)
 	else:

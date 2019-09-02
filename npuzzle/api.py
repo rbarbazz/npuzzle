@@ -87,7 +87,8 @@ def check_solvability(ntype, npuzzle_input):
 	return ret
 
 
-def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback=None):
+def solve(ntype, npuzzle_input, p_greedy, p_heuristic, force_solve,
+		callback=None):
 	global CURRENT_PROCESS
 	if is_solving():
 		return {"error": True, "data": "A npuzzle is being solved already"}
@@ -110,9 +111,10 @@ def solve(ntype, npuzzle_input, p_greedy, p_heuristic, callback=None):
 	ret["greedy"] = p_greedy
 	ret["heuristic"] = p_heuristic
 	ret["size"] = tmp.size
+	ret["force"] = force_solve
 	ret["solvable"] = gen.solvable(ret["type"], tmp,
 		npuzzle.make_taquin(ret["goal"]))
-	if ret["solvable"] or True:
+	if ret["solvable"] or force_solve:
 		CURRENT_PROCESS = Process(ret, callback)
 		CURRENT_PROCESS.start()
 	return ret

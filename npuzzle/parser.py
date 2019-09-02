@@ -115,6 +115,8 @@ def sanitize_arguments():
 		help="Available heuristics: {}".format(", ".join(HEURISTICS_LIST)))
 	parsers["solve"].add_argument("-g", "--greedy", default=False,
 		action="store_true", help="Greedy mode")
+	parsers["solve"].add_argument("--force", default=False,
+		action="store_true", help="Force solve even if unsolvable")
 
 	args = parser.parse_args()
 	if not len(sys.argv) > 1:
