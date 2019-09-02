@@ -43,7 +43,7 @@ def solve():
     heuristic = request.args.get('heuristic')
     dataJson = api.solve(
             'snale',
-            list(map(int, baseNPuzzle.split())), greedy, heuristic
+            list(map(int, baseNPuzzle.split())), greedy, heuristic, True
             )
     api.wait_solving()
     return jsonify(dataJson)
