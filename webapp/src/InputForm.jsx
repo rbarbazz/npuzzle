@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { isMobileOnly } from 'react-device-detect';
 import Slider from '@material-ui/core/Slider';
 
+let default_input = ""
+
 class InputForm extends Component {
   constructor(props) {
     super(props);

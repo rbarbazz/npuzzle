@@ -20,7 +20,9 @@ def check_solvability():
     inputPuzzle = request.args.get('inputPuzzle')
     dataJson = api.check_solvability(
             'snale',
-            list(map(int, inputPuzzle.split()))
+            list(map(
+                lambda x: int(x) if x.isdigit() else -1,
+                inputPuzzle.split()))
             )
     return jsonify(dataJson)
 

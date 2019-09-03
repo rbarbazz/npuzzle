@@ -119,6 +119,7 @@ def sanitize_arguments():
 		action="store_true", help="Force solve even if unsolvable")
 
 	args = parser.parse_args()
-	if not len(sys.argv) > 1:
+	if not len(sys.argv) > 1 or not hasattr(args, 'which'):
 		parser.print_help()
+		return None
 	return args

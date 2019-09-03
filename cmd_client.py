@@ -130,6 +130,8 @@ def main():
 
 	# Parse args
 	args = parser.sanitize_arguments()
+	if args is None:
+		return 0
 
 	# Get puzzle in list format
 	if "file" in args and args.file is not None:
@@ -141,8 +143,6 @@ def main():
 	else:
 		puzzle = None
 	# Dispatch actions
-	if not hasattr(args, 'which'):
-		return 0
 	if args.which == "gen":
 		r = api.make_random(args.type, args.size, not args.unsolvable,
 			args.iteration)

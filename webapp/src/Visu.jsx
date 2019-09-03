@@ -273,6 +273,17 @@ class Visu extends Component {
           )
         }
         <div className="buttons-container">
+          {!isSolving && !isMoving
+            && (
+              <button
+                type="button"
+                className="generic-button"
+                onClick={resetStep}
+              >
+                Back
+              </button>
+            )
+          }
           {!isSolving && isSolvable && currNPuzzle !== goal && !isMoving
           && (
           <button
@@ -307,17 +318,6 @@ class Visu extends Component {
                 onClick={this.resetPuzzle}
               >
                 Retry
-              </button>
-            )
-          }
-          {!isSolving && !isMoving
-            && (
-              <button
-                type="button"
-                className="generic-button"
-                onClick={resetStep}
-              >
-                Reset
               </button>
             )
           }

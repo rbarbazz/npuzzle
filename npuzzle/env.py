@@ -9,7 +9,7 @@ from resource import getrusage, getrlimit, RUSAGE_SELF, RLIMIT_DATA
 
 
 IS_MACOS = True if "Darwin" in os.uname() else False
-MAX_MEM_PERCENT = 95
+MAX_MEM_PERCENT = 90
 
 
 def precalc_manhattan(goal):
@@ -37,7 +37,7 @@ def precalc_euclidian(goal):
 			for to in range(0, len(goal.board))])
 		for fromm in range(0, len(goal.board))])
 
-# [0, 1, 4, 6, 10, 15, 20, 25, 32]
+
 def precalc_custom(goal):
 	l_custom = [16] * 200
 	l_custom[0] = 0
