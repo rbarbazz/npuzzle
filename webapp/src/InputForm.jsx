@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { isMobileOnly } from 'react-device-detect';
 import Slider from '@material-ui/core/Slider';
 
-let default_input = ""
 
 class InputForm extends Component {
   constructor(props) {
@@ -15,6 +14,12 @@ class InputForm extends Component {
       isSolvable: true,
       iterations: 3000,
     };
+  }
+
+  componentDidMount() {
+    const { baseNPuzzle } = this.props;
+
+    this.setState({ inputPuzzle: baseNPuzzle });
   }
 
   handleIterationsInput(value) {
@@ -29,7 +34,7 @@ class InputForm extends Component {
   }
 
   render() {
-    const { sendInputPuzzle, sendGenParams } = this.props;
+    const { sendInputPuzzle, sendGenParams, baseNPuzzle } = this.props;
     const {
       inputPuzzle, size, isSolvable, iterations,
     } = this.state;
@@ -42,8 +47,15 @@ class InputForm extends Component {
           name="puzzle"
           className="puzzle-input"
           onChange={e => this.setState({ inputPuzzle: e.target.value })}
+          defaultValue={baseNPuzzle}
         />
-        <button type="button" className="input-validation" onClick={() => sendInputPuzzle(inputPuzzle)}>Validate</button>
+        <button
+          type="button"
+          className="input-validation"
+          onClick={() => sendInputPuzzle(inputPuzzle)}
+        >
+          Validate
+        </button>
         <div className="form-separator">OR</div>
         <div className="form-caption section-title">Generate a random puzzle</div>
         <div className="form-generator-container">
@@ -92,6 +104,7 @@ class InputForm extends Component {
 }
 
 InputForm.propTypes = {
+  baseNPuzzle: PropTypes.string.isRequired,
   sendInputPuzzle: PropTypes.func.isRequired,
   sendGenParams: PropTypes.func.isRequired,
 };

@@ -73,6 +73,7 @@ class NPuzzle extends Component {
         <InputForm
           sendInputPuzzle={this.sendInputPuzzle}
           sendGenParams={this.sendGenParams}
+          baseNPuzzle={baseNPuzzle.join(' ')}
         />
         )
         }
