@@ -16,6 +16,7 @@ def get_puzzle_from_file(file):
 		with open(file, 'r') as f:
 			while True:
 				line = f.readline()
+				line = re.sub(r'#.*', '', line)
 				if line == '': # EOF
 					break
 				line = line.strip()
