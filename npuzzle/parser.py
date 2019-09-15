@@ -49,6 +49,8 @@ def check_str(p_arg):
 
 
 def check_npuzzle(p_arg):
+	if p_arg is None:
+		return False
 	if type(p_arg) != list:
 		return False
 	if len(p_arg) < 4:

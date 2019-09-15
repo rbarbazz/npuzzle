@@ -51,7 +51,7 @@ def gen_linear(size, length):
 
 
 def gen_goal(ntype, size):
-	if size < 2:
+	if size < 2 or size > 100:
 		return None
 	length = size * size
 	if ntype == "snale":

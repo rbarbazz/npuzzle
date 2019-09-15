@@ -12,14 +12,21 @@ from npuzzle import api, parser, gen, npuzzle
 
 def get_puzzle_from_file(file):
 	lines = []
-	with open(file, 'r') as f:
-		while True:
-			line = f.readline()
-			if line == '': # EOF
-				break
-			line = line.strip()
-			if len(line):
-				lines += [line]
+	try:
+		with open(file, 'r') as f:
+			while True:
+				line = f.readline()
+				if line == '': # EOF
+					break
+				line = line.strip()
+				if len(line):
+					lines += [line]
+					if len(lines) > 128:
+						print("File is too big")
+						return None
+	except:
+		print("Error while reading the file")
+		return None
 	if len(lines) == 0:
 		return None
 	# Check first line -> size
@@ -51,6 +58,15 @@ def signal_handler(signalnum, stackframe):
 		api.stop_solving()
 		print("Solving has been stopped by user")
 
+def int_to_move(a):
+	if a == 0:
+		return "U"
+	if a == 1:
+		return "D"
+	if a == 2:
+		return "R"
+	if a == 3:
+		return "L"
 
 def cb_solve(args, data):
 	if data["error"]:
@@ -77,6 +93,9 @@ def cb_solve(args, data):
 		data["stats"]["nodes_stocked"]))
 	print("Nodes explored: {}".format(data["stats"]["nodes_created"]))
 	print("Memory used: {}Mo".format(int(data["stats"]["memory"])))
+	if data["found"]:
+		print("\nSolution: {}".format(
+			", ".join(list(map(int_to_move, data["solution"])))))
 
 def process_solve(puzzle, args):
 	r = api.solve(args.type, puzzle, args.greedy, args.heuristic, args.force,
