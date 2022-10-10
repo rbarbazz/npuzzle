@@ -2,7 +2,7 @@
 The goal of this project is to solve a variable size puzzle (similar to the 15 puzzle problem).
 To find a solution from the initial to the final state, the program uses an implementation of the A* algorithm, combined with multiples heuristics available. A greedy mode is available, much faster, it does not necessarily finds the optimal solution.
 
-In addition to the command line program, a webapp is available, you can build it locally. It is also [hosted](https://npuzzle.herokuapp.com/) but takes a few seconds to wake up and is not very performant as it is on the free plan.
+In addition to the command line program, a webapp is available, you can build it locally.
 
 ![gif](demo.gif)
 
